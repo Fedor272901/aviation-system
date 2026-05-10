@@ -1,45 +1,11 @@
-"""Person router – basic CRUD operations for the Person model.
-
-Endpoints:
-* GET    /persons/               – list all persons
-* GET    /persons/{person_id}    – retrieve a single person
-* POST   /persons/               – create a new person
-* PUT    /persons/{person_id}    – update an existing person
-* DELETE /persons/{person_id}    – delete a person
-
-The router uses the ``get_db`` dependency from ``dependencies.py`` to obtain a
-SQLAlchemy ``Session``. All operations are performed synchronously because the
-SQLAlchemy ORM in this project is used in the classic (non‑async) mode.
-"""
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from dependencies import get_db
-import models  # импортируем файл models.py, где объявлен класс Person
+from app.dependencies import get_db
+from app import models
+from app.schemas.person import PersonRead, PersonCreate
 
 router = APIRouter(prefix="/persons", tags=["Person"])
-
-# Pydantic schemas for request/response payloads
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
-
-
-class PersonCreate(BaseModel):
-    first_name: str = Field(..., max_length=30)
-    last_name: str = Field(..., max_length=30)
-    middle_name: Optional[str] = Field(None, max_length=30)
-    phone: Optional[str] = Field(None, max_length=20)
-    passport: str = Field(..., max_length=15)
-    email: EmailStr = Field(..., max_length=100)
-    password_hash: str = Field(..., max_length=255)
-
-
-class PersonRead(PersonCreate):
-    id: int
-
-    class Config:
-        orm_mode = True
 
 
 @router.get("/", response_model=list[PersonRead])
@@ -97,8 +63,12 @@ def update_person(person_id: int, payload: PersonCreate, db: Session = Depends(g
             status_code=status.HTTP_404_NOT_FOUND, detail="Person not found"
         )
     # Обновляем поля
-    for field, value in payload.model_dump().items():
+    data = payload.model_dump(exclude={"password"})
+
+    for field, value in data.items():
         setattr(person, field, value)
+
+    person.password_hash = payload.password
     db.commit()
     db.refresh(person)
     return person

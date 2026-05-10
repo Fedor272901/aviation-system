@@ -1,12 +1,19 @@
-import sys, os
+from contextlib import asynccontextmanager
 
-sys.path.append(os.path.dirname(__file__))
 from fastapi import FastAPI
+
+from app.db import create_tables
 from app.routers import person
 
-app = FastAPI()
 
-# include routers
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_tables()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+
 app.include_router(person.router)
 
 
