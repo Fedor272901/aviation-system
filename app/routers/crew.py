@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.dependencies import get_db
-from app import crud
+from app.services.crew import CrewService
 from app.schemas.crew import (
     FlightRoleCreate,
     FlightRoleRead,
@@ -33,7 +33,20 @@ router = APIRouter(prefix="/crew", tags=["Crew"])
 @router.get("/roles/", response_model=List[FlightRoleRead])
 def list_flight_roles(db: Session = Depends(get_db)):
     """Получить список всех должностей."""
-    return crud.crew.get_all_flight_roles(db)
+    service = CrewService(db)
+    return service.get_all_flight_roles()
+
+
+@router.get("/roles/{role_id}", response_model=FlightRoleRead)
+def get_flight_role(role_id: int, db: Session = Depends(get_db)):
+    """Получить должность по ID."""
+    service = CrewService(db)
+    role = service.get_flight_role(role_id)
+    if not role:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Должность не найдена"
+        )
+    return role
 
 
 @router.post(
@@ -43,8 +56,9 @@ def list_flight_roles(db: Session = Depends(get_db)):
 )
 def create_flight_role(payload: FlightRoleCreate, db: Session = Depends(get_db)):
     """Создать новую должность."""
+    service = CrewService(db)
     try:
-        return crud.crew.create_flight_role(db, payload)
+        return service.create_flight_role(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -55,14 +69,11 @@ def create_flight_role(payload: FlightRoleCreate, db: Session = Depends(get_db))
 )
 def delete_flight_role(role_id: int, db: Session = Depends(get_db)):
     """Удалить должность."""
-    role = crud.crew.get_flight_role(db, role_id)
-    if not role:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Должность не найдена"
-        )
-
+    service = CrewService(db)
     try:
-        return crud.crew.delete_flight_role(db, role)
+        return service.delete_flight_role(role_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Ошибка при удалении: {str(e)}"
@@ -81,13 +92,15 @@ def list_crew(
     db: Session = Depends(get_db),
 ):
     """Получить список всех сотрудников экипажа с пагинацией."""
-    return crud.crew.get_all_crew(db, skip=skip, limit=limit)
+    service = CrewService(db)
+    return service.get_all_crew(skip=skip, limit=limit)
 
 
 @router.get("/{crew_id}", response_model=CrewRead)
 def get_crew(crew_id: int, db: Session = Depends(get_db)):
     """Получить сотрудника по ID."""
-    crew = crud.crew.get_crew(db, crew_id)
+    service = CrewService(db)
+    crew = service.get_crew(crew_id)
     if not crew:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Сотрудник не найден"
@@ -102,8 +115,9 @@ def get_crew(crew_id: int, db: Session = Depends(get_db)):
 )
 def create_crew(payload: CrewCreate, db: Session = Depends(get_db)):
     """Создать нового сотрудника экипажа."""
+    service = CrewService(db)
     try:
-        return crud.crew.create_crew(db, payload)
+        return service.create_crew(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -111,14 +125,9 @@ def create_crew(payload: CrewCreate, db: Session = Depends(get_db)):
 @router.put("/{crew_id}", response_model=CrewRead)
 def update_crew(crew_id: int, payload: CrewCreate, db: Session = Depends(get_db)):
     """Обновить данные сотрудника."""
-    crew = crud.crew.get_crew(db, crew_id)
-    if not crew:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Сотрудник не найден"
-        )
-
+    service = CrewService(db)
     try:
-        return crud.crew.update_crew(db, crew, payload.person_id)
+        return service.update_crew(crew_id, payload.person_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -126,14 +135,11 @@ def update_crew(crew_id: int, payload: CrewCreate, db: Session = Depends(get_db)
 @router.delete("/{crew_id}", response_model=DeleteResponse)
 def delete_crew(crew_id: int, db: Session = Depends(get_db)):
     """Удалить сотрудника из экипажа."""
-    crew = crud.crew.get_crew(db, crew_id)
-    if not crew:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Сотрудник не найден"
-        )
-
+    service = CrewService(db)
     try:
-        return crud.crew.delete_crew(db, crew)
+        return service.delete_crew(crew_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Ошибка при удалении: {str(e)}"
@@ -155,7 +161,8 @@ def list_assignments(
     db: Session = Depends(get_db),
 ):
     """Получить все назначения сотрудников на рейсы."""
-    return crud.crew.get_all_crew_assignments(db, skip=skip, limit=limit)
+    service = CrewService(db)
+    return service.get_all_crew_assignments(skip=skip, limit=limit)
 
 
 @router.get(
@@ -167,7 +174,8 @@ def get_assignments_by_flight(
     db: Session = Depends(get_db),
 ):
     """Получить всех сотрудников, назначенных на рейс."""
-    return crud.crew.get_assignments_by_flight(db, flight_id)
+    service = CrewService(db)
+    return service.get_assignments_by_flight(flight_id)
 
 
 @router.get(
@@ -179,7 +187,8 @@ def get_assignments_by_crew(
     db: Session = Depends(get_db),
 ):
     """Получить все назначения сотрудника."""
-    return crud.crew.get_assignments_by_crew(db, crew_id)
+    service = CrewService(db)
+    return service.get_assignments_by_crew(crew_id)
 
 
 @router.post(
@@ -189,8 +198,9 @@ def get_assignments_by_crew(
 )
 def create_assignment(payload: CrewAssignmentCreate, db: Session = Depends(get_db)):
     """Назначить сотрудника на рейс."""
+    service = CrewService(db)
     try:
-        return crud.crew.create_crew_assignment(db, payload)
+        return service.create_crew_assignment(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -201,14 +211,11 @@ def create_assignment(payload: CrewAssignmentCreate, db: Session = Depends(get_d
 )
 def delete_assignment(assignment_id: int, db: Session = Depends(get_db)):
     """Удалить назначение сотрудника с рейса."""
-    assignment = crud.crew.get_crew_assignment(db, assignment_id)
-    if not assignment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Назначение не найдено"
-        )
-
+    service = CrewService(db)
     try:
-        return crud.crew.delete_crew_assignment(db, assignment)
+        return service.delete_crew_assignment(assignment_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Ошибка при удалении: {str(e)}"

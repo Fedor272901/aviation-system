@@ -14,7 +14,7 @@ from typing import List
 from datetime import date
 
 from app.dependencies import get_db
-from app import crud
+from app.services.aircraft import AircraftService
 from app.schemas.aircraft import (
     SeatClassCreate,
     SeatClassRead,
@@ -41,13 +41,15 @@ router = APIRouter(prefix="/aircraft", tags=["Aircraft"])
 @router.get("/seat-classes/", response_model=List[SeatClassRead])
 def list_seat_classes(db: Session = Depends(get_db)):
     """Получить все классы мест."""
-    return crud.aircraft.get_all_seat_classes(db)
+    service = AircraftService(db)
+    return service.get_all_seat_classes()
 
 
 @router.get("/seat-classes/{class_id}", response_model=SeatClassRead)
 def get_seat_class(class_id: int, db: Session = Depends(get_db)):
     """Получить класс мест по ID."""
-    seat_class = crud.aircraft.get_seat_class(db, class_id)
+    service = AircraftService(db)
+    seat_class = service.get_seat_class(class_id)
     if not seat_class:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Класс мест не найден"
@@ -62,8 +64,9 @@ def get_seat_class(class_id: int, db: Session = Depends(get_db)):
 )
 def create_seat_class(payload: SeatClassCreate, db: Session = Depends(get_db)):
     """Создать новый класс мест."""
+    service = AircraftService(db)
     try:
-        return crud.aircraft.create_seat_class(db, payload)
+        return service.create_seat_class(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -73,14 +76,9 @@ def update_seat_class(
     class_id: int, payload: SeatClassCreate, db: Session = Depends(get_db)
 ):
     """Обновить данные класса мест."""
-    seat_class = crud.aircraft.get_seat_class(db, class_id)
-    if not seat_class:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Класс мест не найден"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.update_seat_class(db, seat_class, payload)
+        return service.update_seat_class(class_id, payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -88,14 +86,9 @@ def update_seat_class(
 @router.delete("/seat-classes/{class_id}", response_model=DeleteResponse)
 def delete_seat_class(class_id: int, db: Session = Depends(get_db)):
     """Удалить класс мест."""
-    seat_class = crud.aircraft.get_seat_class(db, class_id)
-    if not seat_class:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Класс мест не найден"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.delete_seat_class(db, seat_class)
+        return service.delete_seat_class(class_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -112,13 +105,15 @@ def delete_seat_class(class_id: int, db: Session = Depends(get_db)):
 @router.get("/models/", response_model=List[ModelAircraftRead])
 def list_model_aircraft(db: Session = Depends(get_db)):
     """Получить все модели самолётов."""
-    return crud.aircraft.get_all_model_aircraft(db)
+    service = AircraftService(db)
+    return service.get_all_model_aircraft()
 
 
 @router.get("/models/{model_id}", response_model=ModelAircraftRead)
 def get_model_aircraft(model_id: int, db: Session = Depends(get_db)):
     """Получить модель самолёта по ID."""
-    model = crud.aircraft.get_model_aircraft(db, model_id)
+    service = AircraftService(db)
+    model = service.get_model_aircraft(model_id)
     if not model:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Модель не найдена"
@@ -135,8 +130,9 @@ def create_model_aircraft(
     payload: ModelAircraftCreate, db: Session = Depends(get_db)
 ):
     """Создать новую модель самолёта с распределением мест."""
+    service = AircraftService(db)
     try:
-        return crud.aircraft.create_model_aircraft(db, payload)
+        return service.create_model_aircraft(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -146,14 +142,9 @@ def update_model_aircraft(
     model_id: int, payload: ModelAircraftCreate, db: Session = Depends(get_db)
 ):
     """Обновить данные модели самолёта."""
-    model = crud.aircraft.get_model_aircraft(db, model_id)
-    if not model:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Модель не найдена"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.update_model_aircraft(db, model, payload)
+        return service.update_model_aircraft(model_id, payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -161,14 +152,9 @@ def update_model_aircraft(
 @router.delete("/models/{model_id}", response_model=DeleteResponse)
 def delete_model_aircraft(model_id: int, db: Session = Depends(get_db)):
     """Удалить модель самолёта."""
-    model = crud.aircraft.get_model_aircraft(db, model_id)
-    if not model:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Модель не найдена"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.delete_model_aircraft(db, model)
+        return service.delete_model_aircraft(model_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -185,7 +171,8 @@ def delete_model_aircraft(model_id: int, db: Session = Depends(get_db)):
 @router.get("/model-seats/model/{model_id}", response_model=List[ModelSeatRead])
 def get_model_seats_by_model(model_id: int, db: Session = Depends(get_db)):
     """Получить все распределения мест для модели."""
-    return crud.aircraft.get_model_seats_by_model(db, model_id)
+    service = AircraftService(db)
+    return service.get_model_seats_by_model(model_id)
 
 
 @router.post(
@@ -195,8 +182,9 @@ def get_model_seats_by_model(model_id: int, db: Session = Depends(get_db)):
 )
 def create_model_seat(payload: ModelSeatCreate, db: Session = Depends(get_db)):
     """Создать распределение мест."""
+    service = AircraftService(db)
     try:
-        return crud.aircraft.create_model_seat(db, payload)
+        return service.create_model_seat(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -208,14 +196,9 @@ def update_model_seat(
     db: Session = Depends(get_db),
 ):
     """Обновить количество мест."""
-    model_seat = crud.aircraft.get_model_seat(db, seat_id)
-    if not model_seat:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Распределение не найдено"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.update_model_seat(db, model_seat, seat_count)
+        return service.update_model_seat(seat_id, seat_count)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -223,14 +206,11 @@ def update_model_seat(
 @router.delete("/model-seats/{seat_id}", response_model=DeleteResponse)
 def delete_model_seat(seat_id: int, db: Session = Depends(get_db)):
     """Удалить распределение мест."""
-    model_seat = crud.aircraft.get_model_seat(db, seat_id)
-    if not model_seat:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Распределение не найдено"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.delete_model_seat(db, model_seat)
+        return service.delete_model_seat(seat_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Ошибка при удалении: {str(e)}"
@@ -249,13 +229,15 @@ def list_aircraft(
     db: Session = Depends(get_db),
 ):
     """Получить все самолёты с пагинацией."""
-    return crud.aircraft.get_all_aircraft(db, skip=skip, limit=limit)
+    service = AircraftService(db)
+    return service.get_all_aircraft(skip=skip, limit=limit)
 
 
 @router.get("/{aircraft_id}", response_model=AircraftRead)
 def get_aircraft(aircraft_id: int, db: Session = Depends(get_db)):
     """Получить самолёт по ID."""
-    aircraft = crud.aircraft.get_aircraft(db, aircraft_id)
+    service = AircraftService(db)
+    aircraft = service.get_aircraft(aircraft_id)
     if not aircraft:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Самолёт не найден"
@@ -270,8 +252,9 @@ def get_aircraft(aircraft_id: int, db: Session = Depends(get_db)):
 )
 def create_aircraft(payload: AircraftCreate, db: Session = Depends(get_db)):
     """Создать новый самолёт."""
+    service = AircraftService(db)
     try:
-        return crud.aircraft.create_aircraft(db, payload)
+        return service.create_aircraft(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -281,14 +264,9 @@ def update_aircraft(
     aircraft_id: int, payload: AircraftUpdate, db: Session = Depends(get_db)
 ):
     """Обновить данные самолёта."""
-    aircraft = crud.aircraft.get_aircraft(db, aircraft_id)
-    if not aircraft:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Самолёт не найден"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.update_aircraft(db, aircraft, payload)
+        return service.update_aircraft(aircraft_id, payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -296,14 +274,9 @@ def update_aircraft(
 @router.delete("/{aircraft_id}", response_model=DeleteResponse)
 def delete_aircraft(aircraft_id: int, db: Session = Depends(get_db)):
     """Удалить самолёт."""
-    aircraft = crud.aircraft.get_aircraft(db, aircraft_id)
-    if not aircraft:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Самолёт не найден"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.delete_aircraft(db, aircraft)
+        return service.delete_aircraft(aircraft_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -320,7 +293,20 @@ def delete_aircraft(aircraft_id: int, db: Session = Depends(get_db)):
 @router.get("/leases/", response_model=List[AircraftLeaseRead])
 def list_aircraft_leases(db: Session = Depends(get_db)):
     """Получить все аренды самолётов."""
-    return crud.aircraft.get_all_aircraft_leases(db)
+    service = AircraftService(db)
+    return service.get_all_aircraft_leases()
+
+
+@router.get("/leases/{lease_id}", response_model=AircraftLeaseRead)
+def get_aircraft_lease(lease_id: int, db: Session = Depends(get_db)):
+    """Получить аренду по ID."""
+    service = AircraftService(db)
+    lease = service.get_aircraft_lease(lease_id)
+    if not lease:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Аренда не найдена"
+        )
+    return lease
 
 
 @router.post(
@@ -330,8 +316,9 @@ def list_aircraft_leases(db: Session = Depends(get_db)):
 )
 def create_aircraft_lease(payload: AircraftLeaseCreate, db: Session = Depends(get_db)):
     """Создать аренду самолёта."""
+    service = AircraftService(db)
     try:
-        return crud.aircraft.create_aircraft_lease(db, payload)
+        return service.create_aircraft_lease(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -343,14 +330,9 @@ def update_aircraft_lease(
     db: Session = Depends(get_db),
 ):
     """Обновить дату окончания аренды."""
-    lease = crud.aircraft.get_aircraft_lease(db, lease_id)
-    if not lease:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Аренда не найдена"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.update_aircraft_lease(db, lease, end_date)
+        return service.update_aircraft_lease(lease_id, end_date)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -358,14 +340,11 @@ def update_aircraft_lease(
 @router.delete("/leases/{lease_id}", response_model=DeleteResponse)
 def delete_aircraft_lease(lease_id: int, db: Session = Depends(get_db)):
     """Удалить аренду самолёта."""
-    lease = crud.aircraft.get_aircraft_lease(db, lease_id)
-    if not lease:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Аренда не найдена"
-        )
-
+    service = AircraftService(db)
     try:
-        return crud.aircraft.delete_aircraft_lease(db, lease)
+        return service.delete_aircraft_lease(lease_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Ошибка при удалении: {str(e)}"

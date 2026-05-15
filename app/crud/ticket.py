@@ -5,7 +5,7 @@
 """
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, func
 from datetime import datetime
 from app.models import Ticket, TicketStatus, Flight, SeatClass, Person
 from app.schemas.ticket import TicketCreate, TicketUpdate, TicketSearch
@@ -41,12 +41,7 @@ def get_all_ticket_statuses(db: Session) -> list[TicketStatus]:
 
 
 def create_ticket_status(db: Session, payload: TicketStatusCreate) -> TicketStatus:
-    """Создать новый статус билета."""
-    # Проверка на уникальность
-    existing = get_ticket_status_by_name(db, payload.status_name)
-    if existing:
-        raise ValueError(f"Статус '{payload.status_name}' уже существует")
-
+    """Создать новый статус билета (без проверок - только INSERT)."""
     status = TicketStatus(status_name=payload.status_name)
     db.add(status)
     db.commit()
@@ -57,19 +52,9 @@ def create_ticket_status(db: Session, payload: TicketStatusCreate) -> TicketStat
 
 
 def delete_ticket_status(db: Session, status: TicketStatus) -> dict:
-    """Удалить статус билета."""
+    """Удалить статус билета (без проверок - только DELETE)."""
     status_id = status.id
     status_name = status.status_name
-
-    # Проверка: есть ли билеты с этим статусом
-    tickets_count = db.scalar(
-        select(func.count()).where(Ticket.id_status == status_id)
-    )
-
-    if tickets_count > 0:
-        raise ValueError(
-            f"Нельзя удалить статус: {tickets_count} билетов используют его"
-        )
 
     logger.info(f"Удален статус билета: {status_name} (id={status_id})")
 
@@ -166,7 +151,6 @@ def get_available_seats_for_flight(
     """Получить список свободных мест для рейса и класса."""
     from app.models import ModelSeat, Aircraft, ModelAircraft
 
-    # Получить модель самолёта
     flight = db.get(Flight, flight_id)
     if not flight:
         raise ValueError("Рейс не найден")
@@ -179,7 +163,6 @@ def get_available_seats_for_flight(
     if not model:
         raise ValueError("Модель самолёта не найдена")
 
-    # Получить количество мест для этого класса в модели
     model_seat = db.scalar(
         select(ModelSeat).where(
             ModelSeat.id_model == model.id,
@@ -191,17 +174,14 @@ def get_available_seats_for_flight(
 
     total_seats = model_seat.seat_count
 
-    # Получить занятые места для этого рейса и класса
     occupied_seats = db.execute(
         select(Ticket.seat_number).where(
             Ticket.id_flight == flight_id,
             Ticket.id_seat_class == seat_class_id,
-            Ticket.id_status != 3,  # Исключаем отменённые (статус 3)
+            Ticket.id_status != 3,
         )
     ).scalars().all()
 
-    # Генерация номеров мест (упрощённая - 1A, 1B, 1C, 2A...)
-    # В реальном проекте нужна более сложная логика
     available = []
     for i in range(1, total_seats + 1):
         seat_letter = chr(ord('A') + (i - 1) % 3)
@@ -213,37 +193,7 @@ def get_available_seats_for_flight(
 
 
 def create_ticket(db: Session, payload: TicketCreate) -> Ticket:
-    """Создать новый билет."""
-    # Проверка существования сущностей
-    flight = db.get(Flight, payload.id_flight)
-    if not flight:
-        raise ValueError("Рейс не найден")
-
-    seat_class = db.get(SeatClass, payload.id_seat_class)
-    if not seat_class:
-        raise ValueError("Класс мест не найден")
-
-    passenger = db.get(Person, payload.id_passenger)
-    if not passenger:
-        raise ValueError("Пассажир не найден")
-
-    status = db.get(TicketStatus, payload.id_status)
-    if not status:
-        raise ValueError("Статус билета не найден")
-
-    # Проверка: билет уже существует на это место
-    existing = db.scalar(
-        select(Ticket).where(
-            Ticket.id_flight == payload.id_flight,
-            Ticket.seat_number == payload.seat_number,
-            Ticket.id_status != 3,  # Не считаем отменённые билеты
-        )
-    )
-    if existing:
-        raise ValueError(
-            f"Место {payload.seat_number} уже занято на рейсе {flight.flight_number}"
-        )
-
+    """Создать новый билет (без проверок - только INSERT)."""
     ticket = Ticket(
         seat_number=payload.seat_number,
         id_seat_class=payload.id_seat_class,
@@ -258,31 +208,15 @@ def create_ticket(db: Session, payload: TicketCreate) -> Ticket:
     db.refresh(ticket)
 
     logger.info(
-        f"Создан билет: id={ticket.id}, рейс={flight.flight_number}, "
-        f"место={ticket.seat_number}, пассажир={passenger.email}"
+        f"Создан билет: id={ticket.id}, рейс={payload.id_flight}, "
+        f"место={ticket.seat_number}"
     )
     return ticket
 
 
 def update_ticket(db: Session, ticket: Ticket, payload: TicketUpdate) -> Ticket:
-    """Обновить данные билета."""
+    """Обновить данные билета (без проверок - только UPDATE)."""
     update_data = payload.model_dump(exclude_unset=True)
-
-    if "seat_number" in update_data and update_data["seat_number"] != ticket.seat_number:
-        # Проверка: место свободно
-        flight_id = ticket.id_flight
-        new_seat = update_data["seat_number"]
-
-        existing = db.scalar(
-            select(Ticket).where(
-                Ticket.id_flight == flight_id,
-                Ticket.seat_number == new_seat,
-                Ticket.id != ticket.id,
-                Ticket.id_status != 3,
-            )
-        )
-        if existing:
-            raise ValueError(f"Место {new_seat} уже занято")
 
     if update_data:
         for field, value in update_data.items():
@@ -297,7 +231,6 @@ def update_ticket(db: Session, ticket: Ticket, payload: TicketUpdate) -> Ticket:
 
 def cancel_ticket(db: Session, ticket: Ticket) -> Ticket:
     """Отменить билет (изменить статус на 'Отменён')."""
-    # Найти статус "Отменён"
     cancelled_status = db.scalar(
         select(TicketStatus).where(TicketStatus.status_name == "Отменён")
     )
@@ -346,3 +279,44 @@ def get_ticket_statistics(db: Session) -> dict:
         "total_tickets": total,
         "by_status": status_stats,
     }
+
+
+# =========================================================
+# COUNT FUNCTIONS (для сервисного слоя)
+# =========================================================
+
+
+def count_status_tickets(db: Session, status_id: int) -> int:
+    """Получить количество билетов со статусом."""
+    return db.scalar(
+        select(func.count()).where(Ticket.id_status == status_id)
+    ) or 0
+
+
+def get_flight(db: Session, flight_id: int) -> Flight | None:
+    """Получить рейс по ID."""
+    return db.get(Flight, flight_id)
+
+
+def get_seat_class(db: Session, seat_class_id: int) -> SeatClass | None:
+    """Получить класс мест по ID."""
+    return db.get(SeatClass, seat_class_id)
+
+
+def get_passenger(db: Session, passenger_id: int) -> Person | None:
+    """Получить пассажира по ID."""
+    return db.get(Person, passenger_id)
+
+
+def check_seat_occupied(
+    db: Session, flight_id: int, seat_number: str
+) -> bool:
+    """Проверить, занято ли место на рейсе."""
+    existing = db.scalar(
+        select(Ticket).where(
+            Ticket.id_flight == flight_id,
+            Ticket.seat_number == seat_number,
+            Ticket.id_status != 3,
+        )
+    )
+    return existing is not None

@@ -5,7 +5,7 @@
 """
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select, join
+from sqlalchemy import select
 from app.models import Crew, FlightRole, CrewAssignment, Person, Flight
 from app.schemas.crew import (
     CrewCreate,
@@ -33,12 +33,7 @@ def get_all_flight_roles(db: Session) -> list[FlightRole]:
 
 
 def create_flight_role(db: Session, payload: FlightRoleCreate) -> FlightRole:
-    """Создать новую должность."""
-    # Проверка на уникальность
-    existing = get_flight_role_by_name(db, payload.role_name)
-    if existing:
-        raise ValueError(f"Должность '{payload.role_name}' уже существует")
-
+    """Создать новую должность (без проверок - только INSERT)."""
     role = FlightRole(role_name=payload.role_name)
     db.add(role)
     db.commit()
@@ -56,7 +51,7 @@ def get_flight_role_by_name(db: Session, role_name: str) -> FlightRole | None:
 
 
 def delete_flight_role(db: Session, role: FlightRole) -> dict:
-    """Удалить должность."""
+    """Удалить должность (без проверок - только DELETE)."""
     role_id = role.id
     role_name = role.role_name
 
@@ -99,19 +94,7 @@ def get_all_crew(db: Session, skip: int = 0, limit: int = 100) -> list[Crew]:
 
 
 def create_crew(db: Session, payload: CrewCreate) -> Crew:
-    """Создать нового сотрудника экипажа."""
-    # Проверка, существует ли такой пользователь
-    from app.models import Person
-
-    person = db.get(Person, payload.person_id)
-    if not person:
-        raise ValueError("Пользователь не найден")
-
-    # Проверка, не назначен ли пользователь уже в экипаж
-    existing = get_crew_by_person(db, payload.person_id)
-    if existing:
-        raise ValueError("Этот пользователь уже является сотрудником экипажа")
-
+    """Создать нового сотрудника экипажа (без проверок - только INSERT)."""
     crew = Crew(person_id=payload.person_id)
     db.add(crew)
     db.commit()
@@ -122,17 +105,7 @@ def create_crew(db: Session, payload: CrewCreate) -> Crew:
 
 
 def update_crew(db: Session, crew: Crew, person_id: int) -> Crew:
-    """Обновить данные сотрудника."""
-    # Проверка, существует ли пользователь
-    person = db.get(Person, person_id)
-    if not person:
-        raise ValueError("Пользователь не найден")
-
-    # Проверка, не занят ли другой сотрудник этим пользователем
-    existing = get_crew_by_person(db, person_id)
-    if existing and existing.id != crew.id:
-        raise ValueError("Этот пользователь уже назначен в экипаж")
-
+    """Обновить данные сотрудника (без проверок - только UPDATE)."""
     crew.person_id = person_id
     db.commit()
     db.refresh(crew)
@@ -142,7 +115,7 @@ def update_crew(db: Session, crew: Crew, person_id: int) -> Crew:
 
 
 def delete_crew(db: Session, crew: Crew) -> dict:
-    """Удалить сотрудника из экипажа."""
+    """Удалить сотрудника из экипажа (без проверок - только DELETE)."""
     crew_id = crew.id
     person_id = crew.person_id
 
@@ -214,33 +187,7 @@ def get_assignments_by_crew(
 def create_crew_assignment(
     db: Session, payload: CrewAssignmentCreate
 ) -> CrewAssignment:
-    """Создать назначение сотрудника на рейс."""
-    # Проверка существования сущностей
-    crew = db.get(Crew, payload.id_crew)
-    if not crew:
-        raise ValueError("Сотрудник экипажа не найден")
-
-    flight = db.get(Flight, payload.id_flight)
-    if not flight:
-        raise ValueError("Рейс не найден")
-
-    flight_role = db.get(FlightRole, payload.id_flight_role)
-    if not flight_role:
-        raise ValueError("Должность не найдена")
-
-    # Проверка: не назначен ли уже этот сотрудник на этот рейс с той же ролью
-    existing = db.scalar(
-        select(CrewAssignment).where(
-            CrewAssignment.id_flight == payload.id_flight,
-            CrewAssignment.id_crew == payload.id_crew,
-            CrewAssignment.id_flight_role == payload.id_flight_role,
-        )
-    )
-    if existing:
-        raise ValueError(
-            "Этот сотрудник уже назначен на этот рейс с этой должностью"
-        )
-
+    """Создать назначение сотрудника на рейс (без проверок - только INSERT)."""
     assignment = CrewAssignment(
         id_flight_role=payload.id_flight_role,
         id_flight=payload.id_flight,
@@ -259,7 +206,7 @@ def create_crew_assignment(
 
 
 def delete_crew_assignment(db: Session, assignment: CrewAssignment) -> dict:
-    """Удалить назначение сотрудника с рейса."""
+    """Удалить назначение сотрудника с рейса (без проверок - только DELETE)."""
     assignment_id = assignment.id
     flight_id = assignment.id_flight
     crew_id = assignment.id_crew

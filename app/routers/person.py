@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
-from app import crud
+from app.services.person import PersonService
 from app.schemas.person import (
     PersonRead,
     PersonCreate,
@@ -17,7 +17,8 @@ router = APIRouter(prefix="/persons", tags=["Пользователи"])
 @router.get("/", response_model=list[PersonRead], summary="Получить всех пользователей")
 def list_persons(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Получить список пользователей с пагинацией."""
-    return crud.person.get_all(db, skip=skip, limit=limit)
+    service = PersonService(db)
+    return service.get_all(skip=skip, limit=limit)
 
 
 @router.get(
@@ -27,7 +28,8 @@ def list_persons(skip: int = 0, limit: int = 100, db: Session = Depends(get_db))
 )
 def get_person(person_id: int, db: Session = Depends(get_db)):
     """Получить пользователя по ID."""
-    person = crud.person.get_person(db, person_id)
+    service = PersonService(db)
+    person = service.get_person(person_id)
     if not person:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
@@ -43,8 +45,9 @@ def get_person(person_id: int, db: Session = Depends(get_db)):
 )
 def create_person(payload: PersonCreate, db: Session = Depends(get_db)):
     """Создать нового пользователя."""
+    service = PersonService(db)
     try:
-        return crud.person.create_person(db, payload)
+        return service.create_person(payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -52,18 +55,13 @@ def create_person(payload: PersonCreate, db: Session = Depends(get_db)):
 @router.put(
     "/{person_id}",
     response_model=PersonRead,
-    summary="Обновить информацию о  пользователе",
+    summary="Обновить информацию о пользователе",
 )
 def update_person(person_id: int, payload: PersonUpdate, db: Session = Depends(get_db)):
     """Обновить данные пользователя (без пароля)."""
-    person = crud.person.get_person(db, person_id)
-    if not person:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
-        )
-
+    service = PersonService(db)
     try:
-        return crud.person.update_person(db, person, payload)
+        return service.update_person(person_id, payload)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -83,16 +81,9 @@ def change_password(
 
     Требуется предоставить текущий пароль для проверки.
     """
-    person = crud.person.get_person(db, person_id)
-    if not person:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
-        )
-
+    service = PersonService(db)
     try:
-        return crud.person.change_password(
-            db, person, payload.old_password, payload.new_password
-        )
+        return service.change_password(person_id, payload.old_password, payload.new_password)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -102,13 +93,10 @@ def change_password(
 )
 def delete_person(person_id: int, db: Session = Depends(get_db)):
     """Удалить пользователя."""
-    person = crud.person.get_person(db, person_id)
-    if not person:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Пользователь не найден"
-        )
-
+    service = PersonService(db)
     try:
-        return crud.person.delete_person(db, person)
+        return service.delete_person(person_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")

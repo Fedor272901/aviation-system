@@ -14,6 +14,7 @@ from app.models import (
     Aircraft,
     AircraftLease,
     Airline,
+    Flight,
 )
 from app.schemas.aircraft import (
     SeatClassCreate,
@@ -53,12 +54,7 @@ def get_all_seat_classes(db: Session) -> list[SeatClass]:
 
 
 def create_seat_class(db: Session, payload: SeatClassCreate) -> SeatClass:
-    """Создать новый класс мест."""
-    # Проверка на уникальность
-    existing = get_seat_class_by_name(db, payload.class_name)
-    if existing:
-        raise ValueError(f"Класс мест '{payload.class_name}' уже существует")
-
+    """Создать новый класс мест (без проверок - только INSERT)."""
     seat_class = SeatClass(
         class_name=payload.class_name,
         price_multiplier=payload.price_multiplier,
@@ -78,14 +74,8 @@ def create_seat_class(db: Session, payload: SeatClassCreate) -> SeatClass:
 def update_seat_class(
     db: Session, seat_class: SeatClass, payload: SeatClassCreate
 ) -> SeatClass:
-    """Обновить данные класса мест."""
-    # Проверка на уникальность (если изменён)
-    if payload.class_name != seat_class.class_name:
-        existing = get_seat_class_by_name(db, payload.class_name)
-        if existing:
-            raise ValueError(f"Класс мест '{payload.class_name}' уже существует")
-        seat_class.class_name = payload.class_name
-
+    """Обновить данные класса мест (без проверок - только UPDATE)."""
+    seat_class.class_name = payload.class_name
     seat_class.price_multiplier = payload.price_multiplier
     seat_class.description = payload.description
     db.commit()
@@ -96,19 +86,9 @@ def update_seat_class(
 
 
 def delete_seat_class(db: Session, seat_class: SeatClass) -> dict:
-    """Удалить класс мест."""
+    """Удалить класс мест (без проверок - только DELETE)."""
     class_id = seat_class.id
     class_name = seat_class.class_name
-
-    # Проверка: есть ли места этого класса
-    model_seats_count = db.scalar(
-        select(func.count()).where(ModelSeat.id_seat_class == class_id)
-    )
-
-    if model_seats_count > 0:
-        raise ValueError(
-            f"Нельзя удалить класс: {model_seats_count} распределений мест используют его"
-        )
 
     logger.info(f"Удален класс мест: {class_name} (id={class_id})")
 
@@ -142,7 +122,7 @@ def get_all_model_aircraft(db: Session) -> list[ModelAircraft]:
 def create_model_aircraft(
     db: Session, payload: ModelAircraftCreate
 ) -> ModelAircraft:
-    """Создать новую модель самолёта."""
+    """Создать новую модель самолёта (без проверок - только INSERT)."""
     model = ModelAircraft(
         name=payload.name,
         manufacturer=payload.manufacturer,
@@ -151,7 +131,6 @@ def create_model_aircraft(
     db.commit()
     db.refresh(model)
 
-    # Создаём распределение мест
     for seat_data in payload.seats:
         model_seat = ModelSeat(
             id_model=model.id,
@@ -168,9 +147,9 @@ def create_model_aircraft(
 
 
 def update_model_aircraft(
-    db: Session, model: ModelAircraft, payload: ModelAircraftBase
+    db: Session, model: ModelAircraft, payload: ModelAircraftCreate
 ) -> ModelAircraft:
-    """Обновить данные модели самолёта."""
+    """Обновить данные модели самолёта (без проверок - только UPDATE)."""
     model.name = payload.name
     model.manufacturer = payload.manufacturer
     db.commit()
@@ -181,29 +160,9 @@ def update_model_aircraft(
 
 
 def delete_model_aircraft(db: Session, model: ModelAircraft) -> dict:
-    """Удалить модель самолёта."""
+    """Удалить модель самолёта (без проверок - только DELETE)."""
     model_id = model.id
     model_name = model.name
-
-    # Проверка: есть ли самолёты этой модели
-    aircraft_count = db.scalar(
-        select(func.count()).where(Aircraft.id_model == model_id)
-    )
-
-    if aircraft_count > 0:
-        raise ValueError(
-            f"Нельзя удалить модель: {aircraft_count} самолётов используют её"
-        )
-
-    # Проверка: есть ли распределения мест
-    model_seats_count = db.scalar(
-        select(func.count()).where(ModelSeat.id_model == model_id)
-    )
-
-    if model_seats_count > 0:
-        raise ValueError(
-            f"Нельзя удалить модель: {model_seats_count} распределений мест"
-        )
 
     logger.info(f"Удалена модель самолёта: {model_name} (id={model_id})")
 
@@ -242,41 +201,8 @@ def get_model_seats_by_model(
     )
 
 
-def get_total_seats_for_model(db: Session, model_id: int) -> int:
-    """Получить общее количество мест для модели."""
-    return (
-        db.execute(
-            select(ModelSeat)
-            .where(ModelSeat.id_model == model_id)
-        )
-        .scalars()
-        .sum()
-    ) or 0
-
-
 def create_model_seat(db: Session, payload: ModelSeatCreate) -> ModelSeat:
-    """Создать распределение мест."""
-    # Проверка существования
-    model = db.get(ModelAircraft, payload.id_model)
-    if not model:
-        raise ValueError("Модель самолёта не найдена")
-
-    seat_class = db.get(SeatClass, payload.id_seat_class)
-    if not seat_class:
-        raise ValueError("Класс мест не найден")
-
-    # Проверка: уже есть распределение этого класса для модели
-    existing = db.scalar(
-        select(ModelSeat).where(
-            ModelSeat.id_model == payload.id_model,
-            ModelSeat.id_seat_class == payload.id_seat_class,
-        )
-    )
-    if existing:
-        raise ValueError(
-            f"Распределение для класса '{seat_class.class_name}' уже существует"
-        )
-
+    """Создать распределение мест (без проверок - только INSERT)."""
     model_seat = ModelSeat(
         id_model=payload.id_model,
         id_seat_class=payload.id_seat_class,
@@ -297,7 +223,7 @@ def create_model_seat(db: Session, payload: ModelSeatCreate) -> ModelSeat:
 def update_model_seat(
     db: Session, model_seat: ModelSeat, seat_count: int
 ) -> ModelSeat:
-    """Обновить количество мест."""
+    """Обновить количество мест (без проверок - только UPDATE)."""
     model_seat.seat_count = seat_count
     db.commit()
     db.refresh(model_seat)
@@ -309,7 +235,7 @@ def update_model_seat(
 
 
 def delete_model_seat(db: Session, model_seat: ModelSeat) -> dict:
-    """Удалить распределение мест."""
+    """Удалить распределение мест (без проверок - только DELETE)."""
     seat_id = model_seat.id
     model_id = model_seat.id_model
 
@@ -356,19 +282,7 @@ def get_all_aircraft(db: Session, skip: int = 0, limit: int = 100) -> list[Aircr
 
 
 def create_aircraft(db: Session, payload: AircraftCreate) -> Aircraft:
-    """Создать новый самолёт."""
-    # Проверка на уникальность регистрационного номера
-    existing = get_aircraft_by_registration(db, payload.registration_number)
-    if existing:
-        raise ValueError(
-            f"Самолёт с номером '{payload.registration_number}' уже существует"
-        )
-
-    # Проверка существования модели
-    model = db.get(ModelAircraft, payload.id_model)
-    if not model:
-        raise ValueError("Модель самолёта не найдена")
-
+    """Создать новый самолёт (без проверок - только INSERT)."""
     aircraft = Aircraft(
         registration_number=payload.registration_number,
         id_model=payload.id_model,
@@ -382,7 +296,7 @@ def create_aircraft(db: Session, payload: AircraftCreate) -> Aircraft:
 
     logger.info(
         f"Создан самолёт: {aircraft.registration_number} "
-        f"(модель={model.name}) (id={aircraft.id})"
+        f"(id={aircraft.id})"
     )
     return aircraft
 
@@ -390,19 +304,8 @@ def create_aircraft(db: Session, payload: AircraftCreate) -> Aircraft:
 def update_aircraft(
     db: Session, aircraft: Aircraft, payload: AircraftUpdate
 ) -> Aircraft:
-    """Обновить данные самолёта."""
+    """Обновить данные самолёта (без проверок - только UPDATE)."""
     update_data = payload.model_dump(exclude_unset=True)
-
-    # Проверка на уникальность регистрационного номера (если изменён)
-    if "registration_number" in update_data:
-        if update_data["registration_number"] != aircraft.registration_number:
-            existing = get_aircraft_by_registration(
-                db, update_data["registration_number"]
-            )
-            if existing:
-                raise ValueError(
-                    f"Самолёт с номером '{update_data['registration_number']}' уже существует"
-                )
 
     if update_data:
         for field, value in update_data.items():
@@ -416,34 +319,9 @@ def update_aircraft(
 
 
 def delete_aircraft(db: Session, aircraft: Aircraft) -> dict:
-    """Удалить самолёт."""
+    """Удалить самолёт (без проверок - только DELETE)."""
     aircraft_id = aircraft.id
     registration = aircraft.registration_number
-
-    # Проверка: есть ли рейсы на этом самолёте
-    flights_count = db.scalar(
-        select(func.count()).where(
-            Flight.id_aircraft == aircraft_id
-        )
-    )
-
-    if flights_count > 0:
-        raise ValueError(
-            f"Нельзя удалить самолёт: {flights_count} рейсов используют его"
-        )
-
-    # Проверка: есть ли активные аренды
-    leases_count = db.scalar(
-        select(func.count()).where(
-            AircraftLease.id_aircraft == aircraft_id,
-            AircraftLease.end_date == None,
-        )
-    )
-
-    if leases_count > 0:
-        raise ValueError(
-            f"Нельзя удалить самолёт: {leases_count} активных аренды"
-        )
 
     logger.info(f"Удален самолёт: {registration} (id={aircraft_id})")
 
@@ -478,8 +356,6 @@ def get_active_lease_for_aircraft(
     db: Session, aircraft_id: int
 ) -> AircraftLease | None:
     """Получить активную аренду для самолёта."""
-    from datetime import date
-
     return db.scalar(
         select(AircraftLease)
         .where(
@@ -490,27 +366,7 @@ def get_active_lease_for_aircraft(
 
 
 def create_aircraft_lease(db: Session, payload: AircraftLeaseCreate) -> AircraftLease:
-    """Создать аренду самолёта."""
-    # Проверка существования
-    aircraft = db.get(Aircraft, payload.id_aircraft)
-    if not aircraft:
-        raise ValueError("Самолёт не найден")
-
-    airline = db.get(Airline, payload.id_airline)
-    if not airline:
-        raise ValueError("Авиакомпания не найдена")
-
-    # Проверка: нет ли активной аренды
-    existing_active = get_active_lease_for_aircraft(db, payload.id_aircraft)
-    if existing_active:
-        raise ValueError(
-            f"У самолёта уже есть активная аренда (id={existing_active.id})"
-        )
-
-    # Проверка дат
-    if payload.end_date and payload.end_date <= payload.start_date:
-        raise ValueError("Дата окончания должна быть после даты начала")
-
+    """Создать аренду самолёта (без проверок - только INSERT)."""
     lease = AircraftLease(
         id_aircraft=payload.id_aircraft,
         id_airline=payload.id_airline,
@@ -533,10 +389,7 @@ def create_aircraft_lease(db: Session, payload: AircraftLeaseCreate) -> Aircraft
 def update_aircraft_lease(
     db: Session, lease: AircraftLease, end_date: date
 ) -> AircraftLease:
-    """Обновить дату окончания аренды."""
-    if end_date and end_date <= lease.start_date:
-        raise ValueError("Дата окончания должна быть после даты начала")
-
+    """Обновить дату окончания аренды (без проверок - только UPDATE)."""
     lease.end_date = end_date
     db.commit()
     db.refresh(lease)
@@ -546,7 +399,7 @@ def update_aircraft_lease(
 
 
 def delete_aircraft_lease(db: Session, lease: AircraftLease) -> dict:
-    """Удалить аренду самолёта."""
+    """Удалить аренду самолёта (без проверок - только DELETE)."""
     lease_id = lease.id
     aircraft_id = lease.id_aircraft
 
@@ -560,3 +413,51 @@ def delete_aircraft_lease(db: Session, lease: AircraftLease) -> dict:
         "deleted_id": lease_id,
         "aircraft_id": aircraft_id,
     }
+
+
+# =========================================================
+# COUNT FUNCTIONS (для сервисного слоя)
+# =========================================================
+
+
+def count_seat_class_model_seats(db: Session, class_id: int) -> int:
+    """Получить количество распределений мест для класса."""
+    return db.scalar(
+        select(func.count()).where(ModelSeat.id_seat_class == class_id)
+    ) or 0
+
+
+def count_model_aircraft(db: Session, model_id: int) -> int:
+    """Получить количество самолётов модели."""
+    return db.scalar(
+        select(func.count()).where(Aircraft.id_model == model_id)
+    ) or 0
+
+
+def count_model_model_seats(db: Session, model_id: int) -> int:
+    """Получить количество распределений мест для модели."""
+    return db.scalar(
+        select(func.count()).where(ModelSeat.id_model == model_id)
+    ) or 0
+
+
+def count_aircraft_flights(db: Session, aircraft_id: int) -> int:
+    """Получить количество рейсов на самолёте."""
+    return db.scalar(
+        select(func.count()).where(Flight.id_aircraft == aircraft_id)
+    ) or 0
+
+
+def count_active_aircraft_leases(db: Session, aircraft_id: int) -> int:
+    """Получить количество активных аренд самолёта."""
+    return db.scalar(
+        select(func.count()).where(
+            AircraftLease.id_aircraft == aircraft_id,
+            AircraftLease.end_date == None,
+        )
+    ) or 0
+
+
+def get_airline(db: Session, airline_id: int) -> Airline | None:
+    """Получить авиакомпанию по ID."""
+    return db.get(Airline, airline_id)

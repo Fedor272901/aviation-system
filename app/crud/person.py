@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.models import Person
 from app.schemas.person import PersonCreate, PersonUpdate
-from app.auth.hashing import hash_password, verify_password
+from app.auth.hashing import hash_password
 import logging
 
 logger = logging.getLogger(__name__)
@@ -33,13 +33,7 @@ def get_all(db: Session, skip: int = 0, limit: int = 100) -> list[Person]:
 
 
 def create_person(db: Session, payload: PersonCreate) -> Person:
-    """Создать нового пользователя."""
-    # Проверка на существование
-    if get_by_email(db, payload.email):
-        raise ValueError("Email уже зарегистрирован")
-    if get_by_passport(db, payload.passport):
-        raise ValueError("Паспорт уже зарегистрирован")
-
+    """Создать нового пользователя (без проверок - только INSERT)."""
     person = Person(
         first_name=payload.first_name,
         last_name=payload.last_name,
@@ -59,22 +53,13 @@ def create_person(db: Session, payload: PersonCreate) -> Person:
 
 
 def update_person(db: Session, person: Person, payload: PersonUpdate) -> Person:
-    """Обновить данные пользователя (без пароля)."""
+    """Обновить данные пользователя (без проверок - только UPDATE)."""
 
     update_data = payload.model_dump(exclude_unset=True)
 
-    # Проверка на занятость email/passport другими пользователями
-    if update_data.get("email") and update_data["email"] != person.email:
-        if get_by_email(db, update_data["email"]):
-            raise ValueError("Email уже занят")
-
-    if update_data.get("passport") and update_data["passport"] != person.passport:
-        if get_by_passport(db, update_data["passport"]):
-            raise ValueError("Паспорт уже занят")
-
-    # Обновляем поля
-    for field, value in update_data.items():
-        setattr(person, field, value)
+    if update_data:
+        for field, value in update_data.items():
+            setattr(person, field, value)
 
     db.commit()
     db.refresh(person)
@@ -84,14 +69,9 @@ def update_person(db: Session, person: Person, payload: PersonUpdate) -> Person:
 
 
 def change_password(
-    db: Session, person: Person, old_password: str, new_password: str
+    db: Session, person: Person, new_password: str
 ) -> Person:
-    """Сменить пароль с проверкой старого."""
-    # Проверка старого пароля
-    if not verify_password(old_password, person.password_hash):
-        raise ValueError("Неверный текущий пароль")
-
-    # Обновление пароля
+    """Сменить пароль (без проверок - только UPDATE)."""
     person.password_hash = hash_password(new_password)
     db.commit()
     db.refresh(person)
@@ -101,7 +81,7 @@ def change_password(
 
 
 def delete_person(db: Session, person: Person) -> dict:
-    """Удалить пользователя."""
+    """Удалить пользователя (без проверок - только DELETE)."""
     person_id = person.id
     person_email = person.email
 

@@ -14,6 +14,8 @@ from app.models import (
     Flight,
     FlightPrice,
     ModelAircraft,
+    Aircraft,
+    Flight as FlightModel,
 )
 from app.schemas.flight import (
     AirportCreate,
@@ -50,12 +52,7 @@ def get_all_airports(db: Session) -> list[Airport]:
 
 
 def create_airport(db: Session, payload: AirportCreate) -> Airport:
-    """Создать новый аэропорт."""
-    # Проверка на уникальность кода
-    existing = get_airport_by_code(db, payload.code)
-    if existing:
-        raise ValueError(f"Аэропорт с кодом '{payload.code}' уже существует")
-
+    """Создать новый аэропорт (без проверок - только INSERT)."""
     airport = Airport(
         code=payload.code.upper(),
         name=payload.name,
@@ -70,14 +67,8 @@ def create_airport(db: Session, payload: AirportCreate) -> Airport:
 
 
 def update_airport(db: Session, airport: Airport, payload: AirportCreate) -> Airport:
-    """Обновить данные аэропорта."""
-    # Проверка на уникальность кода (если изменён)
-    if payload.code.upper() != airport.code:
-        existing = get_airport_by_code(db, payload.code)
-        if existing:
-            raise ValueError(f"Аэропорт с кодом '{payload.code}' уже существует")
-        airport.code = payload.code.upper()
-
+    """Обновить данные аэропорта (без проверок - только UPDATE)."""
+    airport.code = payload.code.upper()
     airport.name = payload.name
     airport.city = payload.city
     db.commit()
@@ -88,23 +79,9 @@ def update_airport(db: Session, airport: Airport, payload: AirportCreate) -> Air
 
 
 def delete_airport(db: Session, airport: Airport) -> dict:
-    """Удалить аэропорт."""
+    """Удалить аэропорт (без проверок - только DELETE)."""
     airport_id = airport.id
     airport_code = airport.code
-
-    # Проверка: есть ли рейсы с этим аэропортом
-    departing_count = db.scalar(
-        select(func.count()).where(Flight.id_from == airport_id)
-    )
-    arriving_count = db.scalar(
-        select(func.count()).where(Flight.id_to == airport_id)
-    )
-
-    if departing_count > 0 or arriving_count > 0:
-        raise ValueError(
-            f"Нельзя удалить аэропорт: есть {departing_count} вылетающих и "
-            f"{arriving_count} прибывающих рейсов"
-        )
 
     logger.info(f"Удален аэропорт: {airport_code} (id={airport_id})")
 
@@ -139,12 +116,7 @@ def get_all_airlines(db: Session) -> list[Airline]:
 
 
 def create_airline(db: Session, payload: AirlineCreate) -> Airline:
-    """Создать новую авиакомпанию."""
-    # Проверка на уникальность кода
-    existing = get_airline_by_code(db, payload.code)
-    if existing:
-        raise ValueError(f"Авиакомпания с кодом '{payload.code}' уже существует")
-
+    """Создать новую авиакомпанию (без проверок - только INSERT)."""
     airline = Airline(
         name=payload.name,
         code=payload.code.upper(),
@@ -159,14 +131,8 @@ def create_airline(db: Session, payload: AirlineCreate) -> Airline:
 
 
 def update_airline(db: Session, airline: Airline, payload: AirlineCreate) -> Airline:
-    """Обновить данные авиакомпании."""
-    # Проверка на уникальность кода (если изменён)
-    if payload.code.upper() != airline.code:
-        existing = get_airline_by_code(db, payload.code)
-        if existing:
-            raise ValueError(f"Авиакомпания с кодом '{payload.code}' уже существует")
-        airline.code = payload.code.upper()
-
+    """Обновить данные авиакомпании (без проверок - только UPDATE)."""
+    airline.code = payload.code.upper()
     airline.name = payload.name
     airline.country = payload.country
     db.commit()
@@ -177,19 +143,9 @@ def update_airline(db: Session, airline: Airline, payload: AirlineCreate) -> Air
 
 
 def delete_airline(db: Session, airline: Airline) -> dict:
-    """Удалить авиакомпанию."""
+    """Удалить авиакомпанию (без проверок - только DELETE)."""
     airline_id = airline.id
     airline_name = airline.name
-
-    # Проверка: есть ли рейсы у этой авиакомпании
-    flights_count = db.scalar(
-        select(func.count()).where(Flight.id_airline == airline_id)
-    )
-
-    if flights_count > 0:
-        raise ValueError(
-            f"Нельзя удалить авиакомпанию: есть {flights_count} рейсов"
-        )
 
     logger.info(f"Удалена авиакомпания: {airline_name} (id={airline_id})")
 
@@ -213,9 +169,7 @@ def get_flight_status(db: Session, status_id: int) -> FlightStatus | None:
     return db.get(FlightStatus, status_id)
 
 
-def get_flight_status_by_name(
-    db: Session, status_name: str
-) -> FlightStatus | None:
+def get_flight_status_by_name(db: Session, status_name: str) -> FlightStatus | None:
     """Получить статус по имени."""
     return db.scalar(
         select(FlightStatus).where(FlightStatus.status_name == status_name)
@@ -224,18 +178,11 @@ def get_flight_status_by_name(
 
 def get_all_flight_statuses(db: Session) -> list[FlightStatus]:
     """Получить все статусы."""
-    return db.execute(
-        select(FlightStatus).order_by(FlightStatus.id)
-    ).scalars().all()
+    return db.execute(select(FlightStatus).order_by(FlightStatus.id)).scalars().all()
 
 
 def create_flight_status(db: Session, payload: FlightStatusCreate) -> FlightStatus:
-    """Создать новый статус."""
-    # Проверка на уникальность
-    existing = get_flight_status_by_name(db, payload.status_name)
-    if existing:
-        raise ValueError(f"Статус '{payload.status_name}' уже существует")
-
+    """Создать новый статус (без проверок - только INSERT)."""
     status = FlightStatus(status_name=payload.status_name)
     db.add(status)
     db.commit()
@@ -246,19 +193,9 @@ def create_flight_status(db: Session, payload: FlightStatusCreate) -> FlightStat
 
 
 def delete_flight_status(db: Session, status: FlightStatus) -> dict:
-    """Удалить статус."""
+    """Удалить статус (без проверок - только DELETE)."""
     status_id = status.id
     status_name = status.status_name
-
-    # Проверка: есть ли рейсы с этим статусом
-    flights_count = db.scalar(
-        select(func.count()).where(Flight.id_status == status_id)
-    )
-
-    if flights_count > 0:
-        raise ValueError(
-            f"Нельзя удалить статус: {flights_count} рейсов используют этот статус"
-        )
 
     logger.info(f"Удален статус: {status_name} (id={status_id})")
 
@@ -284,14 +221,10 @@ def get_flight(db: Session, flight_id: int) -> Flight | None:
 
 def get_flight_by_number(db: Session, flight_number: str) -> Flight | None:
     """Получить рейс по номеру."""
-    return db.scalar(
-        select(Flight).where(Flight.flight_number == flight_number)
-    )
+    return db.scalar(select(Flight).where(Flight.flight_number == flight_number))
 
 
-def get_all_flights(
-    db: Session, skip: int = 0, limit: int = 100
-) -> list[Flight]:
+def get_all_flights(db: Session, skip: int = 0, limit: int = 100) -> list[Flight]:
     """Получить все рейсы с пагинацией."""
     return (
         db.execute(
@@ -326,9 +259,7 @@ def search_flights(db: Session, criteria: FlightSearch) -> list[Flight]:
     return db.execute(query).scalars().all()
 
 
-def get_upcoming_flights(
-    db: Session, skip: int = 0, limit: int = 100
-) -> list[Flight]:
+def get_upcoming_flights(db: Session, skip: int = 0, limit: int = 100) -> list[Flight]:
     """Получить ближайшие рейсы (из будущего)."""
     now = datetime.now()
     return (
@@ -371,39 +302,7 @@ def get_flights_by_airport(
 
 
 def create_flight(db: Session, payload: FlightCreate) -> Flight:
-    """Создать новый рейс."""
-    # Проверка существования сущностей
-    from_airport = db.get(Airport, payload.id_from)
-    if not from_airport:
-        raise ValueError("Аэропорт вылета не найден")
-
-    to_airport = db.get(Airport, payload.id_to)
-    if not to_airport:
-        raise ValueError("Аэропорт прилёта не найден")
-
-    if payload.id_from == payload.id_to:
-        raise ValueError("Аэропорт вылета и прилёта не могут совпадать")
-
-    airline = db.get(Airline, payload.id_airline)
-    if not airline:
-        raise ValueError("Авиакомпания не найдена")
-
-    aircraft = db.get(ModelAircraft, payload.id_aircraft)
-    if not aircraft:
-        raise ValueError("Самолёт не найден")
-
-    status = db.get(FlightStatus, payload.id_status)
-    if not status:
-        raise ValueError("Статус рейса не найден")
-
-    # Проверка: время прилёта должно быть после вылета
-    if payload.arrival_datetime <= payload.departure_datetime:
-        raise ValueError("Время прилёта должно быть после времени вылета")
-
-    # Проверка: рейс не должен быть в прошлом
-    if payload.departure_datetime < datetime.now():
-        raise ValueError("Невозможно создать рейс в прошлом")
-
+    """Создать новый рейс (без проверок - только INSERT)."""
     flight = Flight(
         flight_number=payload.flight_number,
         departure_datetime=payload.departure_datetime,
@@ -419,15 +318,12 @@ def create_flight(db: Session, payload: FlightCreate) -> Flight:
     db.commit()
     db.refresh(flight)
 
-    logger.info(
-        f"Создан рейс: {flight.flight_number} "
-        f"({from_airport.code} -> {to_airport.code}) (id={flight.id})"
-    )
+    logger.info(f"Создан рейс: {flight.flight_number} " f"(id={flight.id})")
     return flight
 
 
 def update_flight(db: Session, flight: Flight, payload: FlightUpdate) -> Flight:
-    """Обновить данные рейса."""
+    """Обновить данные рейса (без проверок - только UPDATE)."""
     update_data = payload.model_dump(exclude_unset=True)
 
     if update_data:
@@ -442,21 +338,9 @@ def update_flight(db: Session, flight: Flight, payload: FlightUpdate) -> Flight:
 
 
 def delete_flight(db: Session, flight: Flight) -> dict:
-    """Удалить рейс."""
+    """Удалить рейс (без проверок - только DELETE)."""
     flight_id = flight.id
     flight_number = flight.flight_number
-
-    # Проверка: есть ли билеты на этот рейс
-    from app.models import Ticket
-
-    tickets_count = db.scalar(
-        select(func.count()).where(Ticket.id_flight == flight_id)
-    )
-
-    if tickets_count > 0:
-        raise ValueError(
-            f"Нельзя удалить рейс: {tickets_count} проданных билетов"
-        )
 
     logger.info(f"Удален рейс: {flight_number} (id={flight_id})")
 
@@ -471,6 +355,43 @@ def delete_flight(db: Session, flight: Flight) -> dict:
 
 
 # =========================================================
+# COUNT FUNCTIONS (для сервисного слоя)
+# =========================================================
+
+
+def count_departing_flights(db: Session, airport_id: int) -> int:
+    """Получить количество вылетающих рейсов из аэропорта."""
+    return db.scalar(select(func.count()).where(Flight.id_from == airport_id)) or 0
+
+
+def count_arriving_flights(db: Session, airport_id: int) -> int:
+    """Получить количество прибывающих рейсов в аэропорт."""
+    return db.scalar(select(func.count()).where(Flight.id_to == airport_id)) or 0
+
+
+def count_airline_flights(db: Session, airline_id: int) -> int:
+    """Получить количество рейсов авиакомпании."""
+    return db.scalar(select(func.count()).where(Flight.id_airline == airline_id)) or 0
+
+
+def count_status_flights(db: Session, status_id: int) -> int:
+    """Получить количество рейсов со статусом."""
+    return db.scalar(select(func.count()).where(Flight.id_status == status_id)) or 0
+
+
+def count_flight_tickets(db: Session, flight_id: int) -> int:
+    """Получить количество билетов на рейс."""
+    from app.models import Ticket
+
+    return db.scalar(select(func.count()).where(Ticket.id_flight == flight_id)) or 0
+
+
+def get_aircraft(db: Session, aircraft_id: int) -> ModelAircraft | None:
+    """Получить модель самолёта по ID."""
+    return db.get(ModelAircraft, aircraft_id)
+
+
+# =========================================================
 # FLIGHT PRICE
 # =========================================================
 
@@ -480,9 +401,7 @@ def get_flight_price(db: Session, price_id: int) -> FlightPrice | None:
     return db.get(FlightPrice, price_id)
 
 
-def get_flight_prices_by_flight(
-    db: Session, flight_id: int
-) -> list[FlightPrice]:
+def get_flight_prices_by_flight(db: Session, flight_id: int) -> list[FlightPrice]:
     """Получить все цены на рейс."""
     return (
         db.execute(
@@ -518,39 +437,14 @@ def get_active_flight_price(
 
 
 def create_flight_price(db: Session, payload: FlightPriceCreate) -> FlightPrice:
-    """Создать цену на рейс."""
-    # Проверка существования сущностей
-    flight = db.get(Flight, payload.id_flight)
-    if not flight:
-        raise ValueError("Рейс не найден")
-
-    from app.models import SeatClass
-
-    seat_class = db.get(SeatClass, payload.id_seat_class)
-    if not seat_class:
-        raise ValueError("Класс мест не найден")
-
-    # Проверка: цена уже существует для этой даты
-    now = datetime.now()
-    valid_from = payload.valid_from or now
-
-    existing = db.scalar(
-        select(FlightPrice)
-        .where(
-            FlightPrice.id_flight == payload.id_flight,
-            FlightPrice.id_seat_class == payload.id_seat_class,
-            FlightPrice.valid_from == valid_from,
-        )
-    )
-
-    if existing:
-        raise ValueError("Цена для этого рейса и класса уже существует на эту дату")
+    """Создать цену на рейс (без проверок - только INSERT)."""
+    from datetime import datetime
 
     price = FlightPrice(
         id_flight=payload.id_flight,
         id_seat_class=payload.id_seat_class,
         price=payload.price,
-        valid_from=payload.valid_from or now,
+        valid_from=payload.valid_from or datetime.now(),
         valid_to=payload.valid_to,
     )
 
@@ -568,7 +462,7 @@ def create_flight_price(db: Session, payload: FlightPriceCreate) -> FlightPrice:
 def update_flight_price(
     db: Session, price: FlightPrice, new_price: float
 ) -> FlightPrice:
-    """Обновить цену на рейс."""
+    """Обновить цену на рейс (без проверок - только UPDATE)."""
     price.price = new_price
     db.commit()
     db.refresh(price)
@@ -578,7 +472,7 @@ def update_flight_price(
 
 
 def delete_flight_price(db: Session, price: FlightPrice) -> dict:
-    """Удалить цену на рейс."""
+    """Удалить цену на рейс (без проверок - только DELETE)."""
     price_id = price.id
     flight_id = price.id_flight
 

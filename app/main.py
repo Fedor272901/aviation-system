@@ -49,14 +49,16 @@ async def log_requests(request: Request, call_next):
     )
     return response
 
+
 # Middleware: глобальная обработка ошибок
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled error: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Внутренняя ошибка сервера", "path": str(request.url.path)}
+        content={"detail": "Внутренняя ошибка сервера", "path": str(request.url.path)},
     )
+
 
 # Роутеры
 app.include_router(person.router, prefix="/api/v1")
