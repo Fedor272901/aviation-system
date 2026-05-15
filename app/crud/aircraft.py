@@ -5,7 +5,7 @@
 """
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from datetime import date
 from app.models import (
     SeatClass,
@@ -101,9 +101,9 @@ def delete_seat_class(db: Session, seat_class: SeatClass) -> dict:
     class_name = seat_class.class_name
 
     # Проверка: есть ли места этого класса
-    model_seats_count = db.execute(
-        select(ModelSeat).where(ModelSeat.id_seat_class == class_id)
-    ).count()
+    model_seats_count = db.scalar(
+        select(func.count()).where(ModelSeat.id_seat_class == class_id)
+    )
 
     if model_seats_count > 0:
         raise ValueError(
@@ -186,9 +186,9 @@ def delete_model_aircraft(db: Session, model: ModelAircraft) -> dict:
     model_name = model.name
 
     # Проверка: есть ли самолёты этой модели
-    aircraft_count = db.execute(
-        select(Aircraft).where(Aircraft.id_model == model_id)
-    ).count()
+    aircraft_count = db.scalar(
+        select(func.count()).where(Aircraft.id_model == model_id)
+    )
 
     if aircraft_count > 0:
         raise ValueError(
@@ -196,9 +196,9 @@ def delete_model_aircraft(db: Session, model: ModelAircraft) -> dict:
         )
 
     # Проверка: есть ли распределения мест
-    model_seats_count = db.execute(
-        select(ModelSeat).where(ModelSeat.id_model == model_id)
-    ).count()
+    model_seats_count = db.scalar(
+        select(func.count()).where(ModelSeat.id_model == model_id)
+    )
 
     if model_seats_count > 0:
         raise ValueError(
@@ -421,11 +421,11 @@ def delete_aircraft(db: Session, aircraft: Aircraft) -> dict:
     registration = aircraft.registration_number
 
     # Проверка: есть ли рейсы на этом самолёте
-    flights_count = db.execute(
-        select(aircraft.flights.__class__).where(
-            aircraft.flights.__class__.id_aircraft == aircraft_id
+    flights_count = db.scalar(
+        select(func.count()).where(
+            Flight.id_aircraft == aircraft_id
         )
-    ).count()
+    )
 
     if flights_count > 0:
         raise ValueError(
@@ -433,12 +433,12 @@ def delete_aircraft(db: Session, aircraft: Aircraft) -> dict:
         )
 
     # Проверка: есть ли активные аренды
-    leases_count = db.execute(
-        select(AircraftLease).where(
+    leases_count = db.scalar(
+        select(func.count()).where(
             AircraftLease.id_aircraft == aircraft_id,
             AircraftLease.end_date == None,
         )
-    ).count()
+    )
 
     if leases_count > 0:
         raise ValueError(
@@ -496,7 +496,7 @@ def create_aircraft_lease(db: Session, payload: AircraftLeaseCreate) -> Aircraft
     if not aircraft:
         raise ValueError("Самолёт не найден")
 
-    airline = db.get(A airline, payload.id_airline)
+    airline = db.get(Airline, payload.id_airline)
     if not airline:
         raise ValueError("Авиакомпания не найдена")
 

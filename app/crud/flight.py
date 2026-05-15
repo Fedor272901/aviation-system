@@ -5,7 +5,7 @@
 """
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, func
 from datetime import datetime
 from app.models import (
     Airport,
@@ -93,12 +93,12 @@ def delete_airport(db: Session, airport: Airport) -> dict:
     airport_code = airport.code
 
     # Проверка: есть ли рейсы с этим аэропортом
-    departing_count = db.execute(
-        select(Flight).where(Flight.id_from == airport_id)
-    ).count()
-    arriving_count = db.execute(
-        select(Flight).where(Flight.id_to == airport_id)
-    ).count()
+    departing_count = db.scalar(
+        select(func.count()).where(Flight.id_from == airport_id)
+    )
+    arriving_count = db.scalar(
+        select(func.count()).where(Flight.id_to == airport_id)
+    )
 
     if departing_count > 0 or arriving_count > 0:
         raise ValueError(
@@ -182,9 +182,9 @@ def delete_airline(db: Session, airline: Airline) -> dict:
     airline_name = airline.name
 
     # Проверка: есть ли рейсы у этой авиакомпании
-    flights_count = db.execute(
-        select(Flight).where(Flight.id_airline == airline_id)
-    ).count()
+    flights_count = db.scalar(
+        select(func.count()).where(Flight.id_airline == airline_id)
+    )
 
     if flights_count > 0:
         raise ValueError(
@@ -251,9 +251,9 @@ def delete_flight_status(db: Session, status: FlightStatus) -> dict:
     status_name = status.status_name
 
     # Проверка: есть ли рейсы с этим статусом
-    flights_count = db.execute(
-        select(Flight).where(Flight.id_status == status_id)
-    ).count()
+    flights_count = db.scalar(
+        select(func.count()).where(Flight.id_status == status_id)
+    )
 
     if flights_count > 0:
         raise ValueError(
@@ -449,9 +449,9 @@ def delete_flight(db: Session, flight: Flight) -> dict:
     # Проверка: есть ли билеты на этот рейс
     from app.models import Ticket
 
-    tickets_count = db.execute(
-        select(Ticket).where(Ticket.id_flight == flight_id)
-    ).count()
+    tickets_count = db.scalar(
+        select(func.count()).where(Ticket.id_flight == flight_id)
+    )
 
     if tickets_count > 0:
         raise ValueError(

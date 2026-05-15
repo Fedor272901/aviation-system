@@ -5,7 +5,7 @@
 """
 
 from sqlalchemy.orm import Session
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, func
 from datetime import datetime
 from app.models import Ticket, TicketStatus, Flight, SeatClass, Person
 from app.schemas.ticket import TicketCreate, TicketUpdate, TicketSearch
@@ -62,9 +62,9 @@ def delete_ticket_status(db: Session, status: TicketStatus) -> dict:
     status_name = status.status_name
 
     # Проверка: есть ли билеты с этим статусом
-    tickets_count = db.execute(
-        select(Ticket).where(Ticket.id_status == status_id)
-    ).count()
+    tickets_count = db.scalar(
+        select(func.count()).where(Ticket.id_status == status_id)
+    )
 
     if tickets_count > 0:
         raise ValueError(
@@ -333,13 +333,13 @@ def delete_ticket(db: Session, ticket: Ticket) -> dict:
 
 def get_ticket_statistics(db: Session) -> dict:
     """Получить статистику по билетам."""
-    total = db.execute(select(Ticket)).scalars().count()
+    total = db.scalar(select(func.count()).select_from(Ticket))
 
     status_stats = {}
     for status in get_all_ticket_statuses(db):
-        count = db.execute(
-            select(Ticket).where(Ticket.id_status == status.id)
-        ).scalars().count()
+        count = db.scalar(
+            select(func.count()).where(Ticket.id_status == status.id)
+        )
         status_stats[status.status_name] = count
 
     return {
