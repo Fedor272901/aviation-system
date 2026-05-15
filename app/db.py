@@ -1,22 +1,12 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.models.base import Base
-from dotenv import load_dotenv
+from app.core.config import get_settings
 
-# DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fastapi_app.db")
 
-# engine = create_engine(
-#     DATABASE_URL, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-# )
+settings = get_settings()
 
-load_dotenv()
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL не найден в окружении")
-
-engine = create_engine(DATABASE_URL, echo=True, future=True)
+engine = create_engine(settings.DATABASE_URL, echo=settings.DEBUG, future=True)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
