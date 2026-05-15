@@ -60,10 +60,10 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Роутеры
 app.include_router(person.router, prefix="/api/v1")
-# app.include_router(flight.router, prefix="/api/v1")
-# app.include_router(aircraft.router, prefix="/api/v1")
-# app.include_router(crew.router, prefix="/api/v1")
-# app.include_router(ticket.router, prefix="/api/v1")
+app.include_router(flight.router, prefix="/api/v1")
+app.include_router(aircraft.router, prefix="/api/v1")
+app.include_router(crew.router, prefix="/api/v1")
+app.include_router(ticket.router, prefix="/api/v1")
 
 
 @app.get("/")
