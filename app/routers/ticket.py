@@ -14,6 +14,8 @@ from datetime import datetime
 from decimal import Decimal
 
 from app.dependencies import get_db
+from app.dependencies.auth import get_current_user, require_admin
+from app.models import Person
 from app.services.ticket import TicketService
 from app.schemas.ticket import (
     TicketStatusCreate,
@@ -57,7 +59,11 @@ def get_ticket_status(status_id: int, db: Session = Depends(get_db)):
     response_model=TicketStatusRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_ticket_status(payload: TicketStatusCreate, db: Session = Depends(get_db)):
+def create_ticket_status(
+    payload: TicketStatusCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать новый статус билета."""
     service = TicketService(db)
     try:
@@ -67,7 +73,11 @@ def create_ticket_status(payload: TicketStatusCreate, db: Session = Depends(get_
 
 
 @router.delete("/statuses/{status_id}", response_model=DeleteResponse)
-def delete_ticket_status(status_id: int, db: Session = Depends(get_db)):
+def delete_ticket_status(
+    status_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить статус билета."""
     service = TicketService(db)
     try:
@@ -75,9 +85,7 @@ def delete_ticket_status(status_id: int, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Ошибка при удалении: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")
 
 
 # =========================================================
@@ -113,6 +121,50 @@ def get_ticket(ticket_id: int, db: Session = Depends(get_db)):
     response_model=TicketRead,
     status_code=status.HTTP_201_CREATED,
 )
+def create_ticket(
+    payload: TicketCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(get_current_user),
+):
+    """Купить билет (требуется авторизация)."""
+    service = TicketService(db)
+    try:
+        return service.create_ticket(payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/{ticket_id}", response_model=TicketRead)
+def update_ticket(
+    ticket_id: int,
+    payload: TicketUpdate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
+    """Обновить данные билета (только админ)."""
+    service = TicketService(db)
+    try:
+        return service.update_ticket(ticket_id, payload)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/{ticket_id}", response_model=DeleteResponse)
+def delete_ticket(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
+    """Удалить билет (только админ)."""
+    service = TicketService(db)
+    try:
+        return service.delete_ticket(ticket_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")
+
+
 def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)):
     """Купить билет."""
     service = TicketService(db)
@@ -123,9 +175,7 @@ def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{ticket_id}", response_model=TicketRead)
-def update_ticket(
-    ticket_id: int, payload: TicketUpdate, db: Session = Depends(get_db)
-):
+def update_ticket(ticket_id: int, payload: TicketUpdate, db: Session = Depends(get_db)):
     """Обновить данные билета."""
     service = TicketService(db)
     try:
@@ -143,9 +193,7 @@ def delete_ticket(ticket_id: int, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Ошибка при удалении: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")
 
 
 # =========================================================
@@ -225,11 +273,16 @@ def get_available_seats(
     response_model=TicketRead,
     summary="Отменить билет",
 )
-def cancel_ticket(ticket_id: int, db: Session = Depends(get_db)):
+def cancel_ticket(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(get_current_user),
+):
     """
     Отменить билет.
 
     Изменяет статус билета на "Отменён".
+    Требуется авторизация.
     """
     service = TicketService(db)
     try:
@@ -250,4 +303,5 @@ def cancel_ticket(ticket_id: int, db: Session = Depends(get_db)):
 def get_ticket_statistics(db: Session = Depends(get_db)):
     """Получить статистику по всем билетам."""
     from app.crud import ticket as ticket_crud
+
     return ticket_crud.get_ticket_statistics(db)

@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.dependencies import get_db
+from app.dependencies.auth import get_current_user, require_admin
+from app.models import Person
 from app.services.crew import CrewService
 from app.schemas.crew import (
     FlightRoleCreate,
@@ -54,7 +56,11 @@ def get_flight_role(role_id: int, db: Session = Depends(get_db)):
     response_model=FlightRoleRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_flight_role(payload: FlightRoleCreate, db: Session = Depends(get_db)):
+def create_flight_role(
+    payload: FlightRoleCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать новую должность."""
     service = CrewService(db)
     try:
@@ -67,7 +73,11 @@ def create_flight_role(payload: FlightRoleCreate, db: Session = Depends(get_db))
     "/roles/{role_id}",
     response_model=DeleteResponse,
 )
-def delete_flight_role(role_id: int, db: Session = Depends(get_db)):
+def delete_flight_role(
+    role_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить должность."""
     service = CrewService(db)
     try:
@@ -75,9 +85,7 @@ def delete_flight_role(role_id: int, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Ошибка при удалении: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")
 
 
 # =========================================================
@@ -113,7 +121,11 @@ def get_crew(crew_id: int, db: Session = Depends(get_db)):
     response_model=CrewRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_crew(payload: CrewCreate, db: Session = Depends(get_db)):
+def create_crew(
+    payload: CrewCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать нового сотрудника экипажа."""
     service = CrewService(db)
     try:
@@ -123,7 +135,12 @@ def create_crew(payload: CrewCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/{crew_id}", response_model=CrewRead)
-def update_crew(crew_id: int, payload: CrewCreate, db: Session = Depends(get_db)):
+def update_crew(
+    crew_id: int,
+    payload: CrewCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Обновить данные сотрудника."""
     service = CrewService(db)
     try:
@@ -133,7 +150,11 @@ def update_crew(crew_id: int, payload: CrewCreate, db: Session = Depends(get_db)
 
 
 @router.delete("/{crew_id}", response_model=DeleteResponse)
-def delete_crew(crew_id: int, db: Session = Depends(get_db)):
+def delete_crew(
+    crew_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить сотрудника из экипажа."""
     service = CrewService(db)
     try:
@@ -141,9 +162,7 @@ def delete_crew(crew_id: int, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Ошибка при удалении: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")
 
 
 # =========================================================
@@ -196,7 +215,11 @@ def get_assignments_by_crew(
     response_model=CrewAssignmentRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_assignment(payload: CrewAssignmentCreate, db: Session = Depends(get_db)):
+def create_assignment(
+    payload: CrewAssignmentCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Назначить сотрудника на рейс."""
     service = CrewService(db)
     try:
@@ -209,7 +232,11 @@ def create_assignment(payload: CrewAssignmentCreate, db: Session = Depends(get_d
     "/assignments/{assignment_id}",
     response_model=DeleteResponse,
 )
-def delete_assignment(assignment_id: int, db: Session = Depends(get_db)):
+def delete_assignment(
+    assignment_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить назначение сотрудника с рейса."""
     service = CrewService(db)
     try:
@@ -217,6 +244,4 @@ def delete_assignment(assignment_id: int, db: Session = Depends(get_db)):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Ошибка при удалении: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")

@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.routers import person, flight, aircraft, crew, ticket
+from app.routers import person, flight, aircraft, crew, ticket, auth
 from app.middleware import setup_cors
 from app.core.config import get_settings
 
@@ -71,6 +71,7 @@ app.include_router(flight.router, prefix="/api/v1")
 app.include_router(aircraft.router, prefix="/api/v1")
 app.include_router(crew.router, prefix="/api/v1")
 app.include_router(ticket.router, prefix="/api/v1")
+app.include_router(auth.router, prefix="/api/v1")
 
 
 @app.get("/")

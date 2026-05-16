@@ -14,6 +14,8 @@ from typing import List
 from datetime import date
 
 from app.dependencies import get_db
+from app.dependencies.auth import get_current_user, require_admin
+from app.models import Person
 from app.utils.api_utils import raise_from_value_error
 from app.services.aircraft import AircraftService
 from app.schemas.aircraft import (
@@ -63,7 +65,11 @@ def get_seat_class(class_id: int, db: Session = Depends(get_db)):
     response_model=SeatClassRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_seat_class(payload: SeatClassCreate, db: Session = Depends(get_db)):
+def create_seat_class(
+    payload: SeatClassCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать новый класс мест."""
     service = AircraftService(db)
     try:
@@ -74,7 +80,10 @@ def create_seat_class(payload: SeatClassCreate, db: Session = Depends(get_db)):
 
 @router.put("/seat-classes/{class_id}", response_model=SeatClassRead)
 def update_seat_class(
-    class_id: int, payload: SeatClassCreate, db: Session = Depends(get_db)
+    class_id: int,
+    payload: SeatClassCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
 ):
     """Обновить данные класса мест."""
     service = AircraftService(db)
@@ -85,7 +94,11 @@ def update_seat_class(
 
 
 @router.delete("/seat-classes/{class_id}", response_model=DeleteResponse)
-def delete_seat_class(class_id: int, db: Session = Depends(get_db)):
+def delete_seat_class(
+    class_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить класс мест."""
     service = AircraftService(db)
     try:
@@ -128,7 +141,9 @@ def get_model_aircraft(model_id: int, db: Session = Depends(get_db)):
     status_code=status.HTTP_201_CREATED,
 )
 def create_model_aircraft(
-    payload: ModelAircraftCreate, db: Session = Depends(get_db)
+    payload: ModelAircraftCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
 ):
     """Создать новую модель самолёта с распределением мест."""
     service = AircraftService(db)
@@ -140,7 +155,10 @@ def create_model_aircraft(
 
 @router.put("/models/{model_id}", response_model=ModelAircraftRead)
 def update_model_aircraft(
-    model_id: int, payload: ModelAircraftCreate, db: Session = Depends(get_db)
+    model_id: int,
+    payload: ModelAircraftCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
 ):
     """Обновить данные модели самолёта."""
     service = AircraftService(db)
@@ -151,7 +169,11 @@ def update_model_aircraft(
 
 
 @router.delete("/models/{model_id}", response_model=DeleteResponse)
-def delete_model_aircraft(model_id: int, db: Session = Depends(get_db)):
+def delete_model_aircraft(
+    model_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить модель самолёта."""
     service = AircraftService(db)
     try:
@@ -181,7 +203,11 @@ def get_model_seats_by_model(model_id: int, db: Session = Depends(get_db)):
     response_model=ModelSeatRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_model_seat(payload: ModelSeatCreate, db: Session = Depends(get_db)):
+def create_model_seat(
+    payload: ModelSeatCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать распределение мест."""
     service = AircraftService(db)
     try:
@@ -195,6 +221,7 @@ def update_model_seat(
     seat_id: int,
     seat_count: int = Query(..., gt=0, description="Количество мест"),
     db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
 ):
     """Обновить количество мест."""
     service = AircraftService(db)
@@ -205,7 +232,11 @@ def update_model_seat(
 
 
 @router.delete("/model-seats/{seat_id}", response_model=DeleteResponse)
-def delete_model_seat(seat_id: int, db: Session = Depends(get_db)):
+def delete_model_seat(
+    seat_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить распределение мест."""
     service = AircraftService(db)
     try:
@@ -251,7 +282,11 @@ def get_aircraft(aircraft_id: int, db: Session = Depends(get_db)):
     response_model=AircraftRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_aircraft(payload: AircraftCreate, db: Session = Depends(get_db)):
+def create_aircraft(
+    payload: AircraftCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать новый самолёт."""
     service = AircraftService(db)
     try:
@@ -262,7 +297,10 @@ def create_aircraft(payload: AircraftCreate, db: Session = Depends(get_db)):
 
 @router.put("/{aircraft_id}", response_model=AircraftRead)
 def update_aircraft(
-    aircraft_id: int, payload: AircraftUpdate, db: Session = Depends(get_db)
+    aircraft_id: int,
+    payload: AircraftUpdate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
 ):
     """Обновить данные самолёта."""
     service = AircraftService(db)
@@ -273,7 +311,11 @@ def update_aircraft(
 
 
 @router.delete("/{aircraft_id}", response_model=DeleteResponse)
-def delete_aircraft(aircraft_id: int, db: Session = Depends(get_db)):
+def delete_aircraft(
+    aircraft_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить самолёт."""
     service = AircraftService(db)
     try:
@@ -315,7 +357,11 @@ def get_aircraft_lease(lease_id: int, db: Session = Depends(get_db)):
     response_model=AircraftLeaseRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_aircraft_lease(payload: AircraftLeaseCreate, db: Session = Depends(get_db)):
+def create_aircraft_lease(
+    payload: AircraftLeaseCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать аренду самолёта."""
     service = AircraftService(db)
     try:
@@ -329,6 +375,7 @@ def update_aircraft_lease(
     lease_id: int,
     end_date: date = Query(..., description="Дата окончания аренды (NULL = бессрочно)"),
     db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
 ):
     """Обновить дату окончания аренды."""
     service = AircraftService(db)
@@ -339,7 +386,11 @@ def update_aircraft_lease(
 
 
 @router.delete("/leases/{lease_id}", response_model=DeleteResponse)
-def delete_aircraft_lease(lease_id: int, db: Session = Depends(get_db)):
+def delete_aircraft_lease(
+    lease_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить аренду самолёта."""
     service = AircraftService(db)
     try:

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
+from app.dependencies.auth import get_current_user, require_admin
+from app.models import Person
 from app.services.person import PersonService
 from app.utils.api_utils import raise_from_value_error
 from app.schemas.person import (
@@ -44,7 +46,11 @@ def get_person(person_id: int, db: Session = Depends(get_db)):
     status_code=status.HTTP_201_CREATED,
     summary="Создать пользователя",
 )
-def create_person(payload: PersonCreate, db: Session = Depends(get_db)):
+def create_person(
+    payload: PersonCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(get_current_user),
+):
     """Создать нового пользователя."""
     service = PersonService(db)
     try:
@@ -92,7 +98,11 @@ def change_password(
 @router.delete(
     "/{person_id}", response_model=DeleteResponse, summary="Удалить пользователя"
 )
-def delete_person(person_id: int, db: Session = Depends(get_db)):
+def delete_person(
+    person_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить пользователя."""
     service = PersonService(db)
     try:

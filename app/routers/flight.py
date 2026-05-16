@@ -16,6 +16,8 @@ from datetime import datetime
 from decimal import Decimal
 
 from app.dependencies import get_db
+from app.dependencies.auth import get_current_user, require_admin
+from app.models import Person
 from app.services.flight import FlightService
 from app.utils.api_utils import raise_from_value_error
 from app.schemas.flight import (
@@ -66,7 +68,11 @@ def get_airport(airport_id: int, db: Session = Depends(get_db)):
     response_model=AirportRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_airport(payload: AirportCreate, db: Session = Depends(get_db)):
+def create_airport(
+    payload: AirportCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать новый аэропорт."""
     service = FlightService(db)
     try:
@@ -76,7 +82,12 @@ def create_airport(payload: AirportCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/airports/{airport_id}", response_model=AirportRead)
-def update_airport(airport_id: int, payload: AirportCreate, db: Session = Depends(get_db)):
+def update_airport(
+    airport_id: int,
+    payload: AirportCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Обновить данные аэропорта."""
     service = FlightService(db)
     try:
@@ -86,7 +97,11 @@ def update_airport(airport_id: int, payload: AirportCreate, db: Session = Depend
 
 
 @router.delete("/airports/{airport_id}", response_model=DeleteResponse)
-def delete_airport(airport_id: int, db: Session = Depends(get_db)):
+def delete_airport(
+    airport_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить аэропорт."""
     service = FlightService(db)
     try:
@@ -128,7 +143,11 @@ def get_airline(airline_id: int, db: Session = Depends(get_db)):
     response_model=AirlineRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_airline(payload: AirlineCreate, db: Session = Depends(get_db)):
+def create_airline(
+    payload: AirlineCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать новую авиакомпанию."""
     service = FlightService(db)
     try:
@@ -138,7 +157,12 @@ def create_airline(payload: AirlineCreate, db: Session = Depends(get_db)):
 
 
 @router.put("/airlines/{airline_id}", response_model=AirlineRead)
-def update_airline(airline_id: int, payload: AirlineCreate, db: Session = Depends(get_db)):
+def update_airline(
+    airline_id: int,
+    payload: AirlineCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Обновить данные авиакомпании."""
     service = FlightService(db)
     try:
@@ -148,7 +172,11 @@ def update_airline(airline_id: int, payload: AirlineCreate, db: Session = Depend
 
 
 @router.delete("/airlines/{airline_id}", response_model=DeleteResponse)
-def delete_airline(airline_id: int, db: Session = Depends(get_db)):
+def delete_airline(
+    airline_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить авиакомпанию."""
     service = FlightService(db)
     try:
@@ -190,7 +218,11 @@ def get_flight_status(status_id: int, db: Session = Depends(get_db)):
     response_model=FlightStatusRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_flight_status(payload: FlightStatusCreate, db: Session = Depends(get_db)):
+def create_flight_status(
+    payload: FlightStatusCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать новый статус."""
     service = FlightService(db)
     try:
@@ -200,7 +232,11 @@ def create_flight_status(payload: FlightStatusCreate, db: Session = Depends(get_
 
 
 @router.delete("/statuses/{status_id}", response_model=DeleteResponse)
-def delete_flight_status(status_id: int, db: Session = Depends(get_db)):
+def delete_flight_status(
+    status_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить статус."""
     service = FlightService(db)
     try:
@@ -257,7 +293,11 @@ def get_flight(flight_id: int, db: Session = Depends(get_db)):
     response_model=FlightRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_flight(payload: FlightCreate, db: Session = Depends(get_db)):
+def create_flight(
+    payload: FlightCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать новый рейс."""
     service = FlightService(db)
     try:
@@ -271,6 +311,7 @@ def update_flight(
     flight_id: int,
     payload: FlightUpdate,
     db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
 ):
     """Обновить данные рейса."""
     service = FlightService(db)
@@ -281,7 +322,11 @@ def update_flight(
 
 
 @router.delete("/{flight_id}", response_model=DeleteResponse)
-def delete_flight(flight_id: int, db: Session = Depends(get_db)):
+def delete_flight(
+    flight_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить рейс."""
     service = FlightService(db)
     try:
@@ -370,7 +415,11 @@ def get_flight_prices(
     response_model=FlightPriceRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_flight_price(payload: FlightPriceCreate, db: Session = Depends(get_db)):
+def create_flight_price(
+    payload: FlightPriceCreate,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Создать цену на рейс."""
     service = FlightService(db)
     try:
@@ -387,6 +436,7 @@ def update_flight_price(
     price_id: int,
     new_price: float = Query(..., ge=0, description="Новая цена"),
     db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
 ):
     """Обновить цену на рейс."""
     service = FlightService(db)
@@ -400,7 +450,11 @@ def update_flight_price(
     "/prices/{price_id}",
     response_model=DeleteResponse,
 )
-def delete_flight_price(price_id: int, db: Session = Depends(get_db)):
+def delete_flight_price(
+    price_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """Удалить цену на рейс."""
     service = FlightService(db)
     try:
