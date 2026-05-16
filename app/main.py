@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 import logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from app.db import create_tables
 from app.routers import person, flight, aircraft, crew, ticket
 from app.middleware import setup_cors
 from app.core.config import get_settings
@@ -19,7 +18,13 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_tables()
+    if settings.DEBUG:
+        # Только для локальной разработки без Alembic.
+        # В production таблицы управляются миграциями!
+        from app.db import create_tables
+
+        create_tables()
+        logger.info("Таблицы созданы (DEBUG-режим)")
     logger.info("Приложение запущено")
     yield
     logger.info("Приложение остановлено")
@@ -76,6 +81,11 @@ def root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+
+from fastapi.staticfiles import StaticFiles
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 
 # Для запуска через uvicorn в консоли
