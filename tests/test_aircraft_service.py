@@ -164,7 +164,7 @@ class TestModelAircraftService:
         """Успешное удаление модели без зависимостей."""
         # Создаём класс мест без распределений
         seat_class = aircraft_service.create_seat_class(
-            SeatClassCreate(class_name="Тест", price_multiplier=1.0, description="Тест")
+            SeatClassCreate(class_name="Бизнес", price_multiplier=1.0, description="Тест")
         )
 
         # Создаём модель без распределений (пустой список seats)

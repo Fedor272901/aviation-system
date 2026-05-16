@@ -11,7 +11,7 @@ class TestAirportAPI:
     def test_create_airport(self, client, test_airport_data):
         """Создание аэропорта через API."""
         response = client.post("/api/v1/flights/airports/", json=test_airport_data)
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["code"] == "SVO"
@@ -20,18 +20,18 @@ class TestAirportAPI:
     def test_create_airport_duplicate_code(self, client, test_airport_data):
         """Создание аэропорта с дублирующимся кодом через API."""
         client.post("/api/v1/flights/airports/", json=test_airport_data)
-        
+
         response = client.post("/api/v1/flights/airports/", json=test_airport_data)
-        
-        assert response.status_code == 400
+
+        assert response.status_code == 409
 
     def test_get_airport(self, client, test_airport_data):
         """Получение аэропорта через API."""
         create_response = client.post("/api/v1/flights/airports/", json=test_airport_data)
         airport_id = create_response.json()["id"]
-        
+
         response = client.get(f"/api/v1/flights/airports/{airport_id}")
-        
+
         assert response.status_code == 200
 
     def test_get_all_airports(self, client, test_airport_data):
@@ -40,9 +40,9 @@ class TestAirportAPI:
             client.post("/api/v1/flights/airports/", json={
                 "code": code, "name": f"Аэропорт {city}", "city": city
             })
-        
+
         response = client.get("/api/v1/flights/airports/")
-        
+
         assert response.status_code == 200
         assert len(response.json()) == 3
 
@@ -50,9 +50,9 @@ class TestAirportAPI:
         """Удаление аэропорта через API."""
         create_response = client.post("/api/v1/flights/airports/", json=test_airport_data)
         airport_id = create_response.json()["id"]
-        
+
         response = client.delete(f"/api/v1/flights/airports/{airport_id}")
-        
+
         assert response.status_code == 200
 
 
@@ -62,7 +62,7 @@ class TestAirlineAPI:
     def test_create_airline(self, client, test_airline_data):
         """Создание авиакомпании через API."""
         response = client.post("/api/v1/flights/airlines/", json=test_airline_data)
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["code"] == "SU"
@@ -73,9 +73,9 @@ class TestAirlineAPI:
         client.post("/api/v1/flights/airlines/", json={
             "name": "Победа", "code": "DP", "country": "Россия"
         })
-        
+
         response = client.get("/api/v1/flights/airlines/")
-        
+
         assert response.status_code == 200
         assert len(response.json()) == 2
 
@@ -86,7 +86,7 @@ class TestFlightStatusAPI:
     def test_create_flight_status(self, client, test_flight_status_data):
         """Создание статуса через API."""
         response = client.post("/api/v1/flights/statuses/", json=test_flight_status_data)
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["status_name"] == "Планируется"
@@ -95,9 +95,9 @@ class TestFlightStatusAPI:
         """Получение всех статусов через API."""
         client.post("/api/v1/flights/statuses/", json=test_flight_status_data)
         client.post("/api/v1/flights/statuses/", json={"status_name": "Выполняется"})
-        
+
         response = client.get("/api/v1/flights/statuses/")
-        
+
         assert response.status_code == 200
         assert len(response.json()) == 2
 
@@ -108,41 +108,77 @@ class TestFlightAPI:
     @pytest.fixture
     def setup_flight_data(self, client):
         """Создаёт базовые данные для тестов рейсов."""
-        airport1 = client.post("/api/v1/flights/airports/", json={
-            "code": "SVO", "name": "Шереметьево", "city": "Москва"
-        }).json()
-        airport2 = client.post("/api/v1/flights/airports/", json={
-            "code": "LED", "name": "Пулково", "city": "СПб"
-        }).json()
-        airline = client.post("/api/v1/flights/airlines/", json={
-            "name": "Аэрофлот", "code": "SU", "country": "Россия"
-        }).json()
-        status = client.post("/api/v1/flights/statuses/", json={
-            "status_name": "Планируется"
-        }).json()
-        
+        airport1 = client.post(
+            "/api/v1/flights/airports/",
+            json={"code": "SVO", "name": "Шереметьево", "city": "Москва"},
+        ).json()
+        airport2 = client.post(
+            "/api/v1/flights/airports/",
+            json={"code": "LED", "name": "Пулково", "city": "СПб"},
+        ).json()
+        airline = client.post(
+            "/api/v1/flights/airlines/",
+            json={"name": "Аэрофлот", "code": "SU", "country": "Россия"},
+        ).json()
+        status = client.post(
+            "/api/v1/flights/statuses/", json={"status_name": "Планируется"}
+        ).json()
+
+        seat_class = client.post(
+            "/api/v1/aircraft/seat-classes/",
+            json={
+                "class_name": "Эконом",
+                "price_multiplier": 1.0,
+                "description": "Эконом",
+            },
+        ).json()
+
+        model = client.post(
+            "/api/v1/aircraft/models/",
+            json={
+                "name": "Boeing 737",
+                "manufacturer": "Boeing",
+                "seats": [{"class_id": seat_class["id"], "count": 150}],
+            },
+        ).json()
+
+        aircraft = client.post(
+            "/api/v1/aircraft/",
+            json={
+                "registration_number": "RA-12345",
+                "id_model": model["id"],
+                "manufacture_year": 2020,
+                "last_maintenance": "2024-01-01",
+            },
+        ).json()
+
         return {
             "airport1": airport1,
             "airport2": airport2,
             "airline": airline,
             "status": status,
+            "aircraft": aircraft,
         }
 
     def test_create_flight(self, client, setup_flight_data):
         """Создание рейса через API."""
         payload = {
             "flight_number": "SU100",
-            "departure_datetime": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-            "arrival_datetime": (datetime.now(timezone.utc) + timedelta(days=1, hours=2)).isoformat(),
+            "departure_datetime": (
+                datetime.now(timezone.utc) + timedelta(days=1)
+            ).isoformat(),
+            "arrival_datetime": (
+                datetime.now(timezone.utc) + timedelta(days=1, hours=2)
+            ).isoformat(),
             "id_from": setup_flight_data["airport1"]["id"],
             "id_to": setup_flight_data["airport2"]["id"],
             "id_airline": setup_flight_data["airline"]["id"],
-            "id_aircraft": 1,
+            "id_aircraft": setup_flight_data["aircraft"]["id"],
             "id_status": setup_flight_data["status"]["id"],
         }
-        
+
         response = client.post("/api/v1/flights/", json=payload)
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["flight_number"] == "SU100"
@@ -151,36 +187,42 @@ class TestFlightAPI:
         """Создание рейса в прошлом через API."""
         payload = {
             "flight_number": "SU100",
-            "departure_datetime": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
+            "departure_datetime": (
+                datetime.now(timezone.utc) - timedelta(days=1)
+            ).isoformat(),
             "arrival_datetime": datetime.now(timezone.utc).isoformat(),
             "id_from": setup_flight_data["airport1"]["id"],
             "id_to": setup_flight_data["airport2"]["id"],
             "id_airline": setup_flight_data["airline"]["id"],
-            "id_aircraft": 1,
+            "id_aircraft": setup_flight_data["aircraft"]["id"],
             "id_status": setup_flight_data["status"]["id"],
         }
-        
+
         response = client.post("/api/v1/flights/", json=payload)
-        
+
         assert response.status_code == 400
 
     def test_get_all_flights(self, client, setup_flight_data):
         """Получение всех рейсов через API."""
         payload = {
             "flight_number": "SU100",
-            "departure_datetime": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-            "arrival_datetime": (datetime.now(timezone.utc) + timedelta(days=1, hours=2)).isoformat(),
+            "departure_datetime": (
+                datetime.now(timezone.utc) + timedelta(days=1)
+            ).isoformat(),
+            "arrival_datetime": (
+                datetime.now(timezone.utc) + timedelta(days=1, hours=2)
+            ).isoformat(),
             "id_from": setup_flight_data["airport1"]["id"],
             "id_to": setup_flight_data["airport2"]["id"],
             "id_airline": setup_flight_data["airline"]["id"],
-            "id_aircraft": 1,
+            "id_aircraft": setup_flight_data["aircraft"]["id"],
             "id_status": setup_flight_data["status"]["id"],
         }
-        
+
         client.post("/api/v1/flights/", json=payload)
-        
+
         response = client.get("/api/v1/flights/")
-        
+
         assert response.status_code == 200
         assert len(response.json()) >= 1
 
@@ -188,21 +230,25 @@ class TestFlightAPI:
         """Поиск рейсов через API."""
         payload = {
             "flight_number": "SU100",
-            "departure_datetime": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-            "arrival_datetime": (datetime.now(timezone.utc) + timedelta(days=1, hours=2)).isoformat(),
+            "departure_datetime": (
+                datetime.now(timezone.utc) + timedelta(days=1)
+            ).isoformat(),
+            "arrival_datetime": (
+                datetime.now(timezone.utc) + timedelta(days=1, hours=2)
+            ).isoformat(),
             "id_from": setup_flight_data["airport1"]["id"],
             "id_to": setup_flight_data["airport2"]["id"],
             "id_airline": setup_flight_data["airline"]["id"],
-            "id_aircraft": 1,
+            "id_aircraft": setup_flight_data["aircraft"]["id"],
             "id_status": setup_flight_data["status"]["id"],
         }
-        
+
         client.post("/api/v1/flights/", json=payload)
-        
+
         response = client.post("/api/v1/flights/search/", json={
             "id_from": setup_flight_data["airport1"]["id"]
         })
-        
+
         assert response.status_code == 200
         assert len(response.json()) >= 1
 
@@ -210,18 +256,22 @@ class TestFlightAPI:
         """Удаление рейса через API."""
         payload = {
             "flight_number": "SU100",
-            "departure_datetime": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
-            "arrival_datetime": (datetime.now(timezone.utc) + timedelta(days=1, hours=2)).isoformat(),
+            "departure_datetime": (
+                datetime.now(timezone.utc) + timedelta(days=1)
+            ).isoformat(),
+            "arrival_datetime": (
+                datetime.now(timezone.utc) + timedelta(days=1, hours=2)
+            ).isoformat(),
             "id_from": setup_flight_data["airport1"]["id"],
             "id_to": setup_flight_data["airport2"]["id"],
             "id_airline": setup_flight_data["airline"]["id"],
-            "id_aircraft": 1,
+            "id_aircraft": setup_flight_data["aircraft"]["id"],
             "id_status": setup_flight_data["status"]["id"],
         }
-        
+
         create_response = client.post("/api/v1/flights/", json=payload)
         flight_id = create_response.json()["id"]
-        
+
         response = client.delete(f"/api/v1/flights/{flight_id}")
-        
+
         assert response.status_code == 200
