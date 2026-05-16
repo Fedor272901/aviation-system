@@ -17,6 +17,7 @@ from decimal import Decimal
 
 from app.dependencies import get_db
 from app.services.flight import FlightService
+from app.utils.api_utils import raise_from_value_error
 from app.schemas.flight import (
     AirportCreate,
     AirportRead,
@@ -71,7 +72,7 @@ def create_airport(payload: AirportCreate, db: Session = Depends(get_db)):
     try:
         return service.create_airport(payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.put("/airports/{airport_id}", response_model=AirportRead)
@@ -81,7 +82,7 @@ def update_airport(airport_id: int, payload: AirportCreate, db: Session = Depend
     try:
         return service.update_airport(airport_id, payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.delete("/airports/{airport_id}", response_model=DeleteResponse)
@@ -91,7 +92,7 @@ def delete_airport(airport_id: int, db: Session = Depends(get_db)):
     try:
         return service.delete_airport(airport_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Ошибка при удалении: {str(e)}"
@@ -133,7 +134,7 @@ def create_airline(payload: AirlineCreate, db: Session = Depends(get_db)):
     try:
         return service.create_airline(payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.put("/airlines/{airline_id}", response_model=AirlineRead)
@@ -143,7 +144,7 @@ def update_airline(airline_id: int, payload: AirlineCreate, db: Session = Depend
     try:
         return service.update_airline(airline_id, payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.delete("/airlines/{airline_id}", response_model=DeleteResponse)
@@ -153,7 +154,7 @@ def delete_airline(airline_id: int, db: Session = Depends(get_db)):
     try:
         return service.delete_airline(airline_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Ошибка при удалении: {str(e)}"
@@ -176,12 +177,12 @@ def list_flight_statuses(db: Session = Depends(get_db)):
 def get_flight_status(status_id: int, db: Session = Depends(get_db)):
     """Получить статус по ID."""
     service = FlightService(db)
-    status = service.get_flight_status(status_id)
-    if not status:
+    status_flight = service.get_flight_status(status_id)
+    if not status_flight:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Статус не найден"
         )
-    return status
+    return status_flight
 
 
 @router.post(
@@ -195,7 +196,7 @@ def create_flight_status(payload: FlightStatusCreate, db: Session = Depends(get_
     try:
         return service.create_flight_status(payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.delete("/statuses/{status_id}", response_model=DeleteResponse)
@@ -205,7 +206,7 @@ def delete_flight_status(status_id: int, db: Session = Depends(get_db)):
     try:
         return service.delete_flight_status(status_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Ошибка при удалении: {str(e)}"
@@ -262,7 +263,7 @@ def create_flight(payload: FlightCreate, db: Session = Depends(get_db)):
     try:
         return service.create_flight(payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.put("/{flight_id}", response_model=FlightRead)
@@ -276,7 +277,7 @@ def update_flight(
     try:
         return service.update_flight(flight_id, payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.delete("/{flight_id}", response_model=DeleteResponse)
@@ -286,7 +287,7 @@ def delete_flight(flight_id: int, db: Session = Depends(get_db)):
     try:
         return service.delete_flight(flight_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Ошибка при удалении: {str(e)}"
@@ -375,7 +376,7 @@ def create_flight_price(payload: FlightPriceCreate, db: Session = Depends(get_db
     try:
         return service.create_flight_price(payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.put(
@@ -392,7 +393,7 @@ def update_flight_price(
     try:
         return service.update_flight_price(price_id, new_price)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.delete(

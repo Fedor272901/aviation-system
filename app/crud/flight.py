@@ -386,9 +386,9 @@ def count_flight_tickets(db: Session, flight_id: int) -> int:
     return db.scalar(select(func.count()).where(Ticket.id_flight == flight_id)) or 0
 
 
-def get_aircraft(db: Session, aircraft_id: int) -> ModelAircraft | None:
+def get_aircraft(db: Session, aircraft_id: int) -> Aircraft | None:
     """Получить модель самолёта по ID."""
-    return db.get(ModelAircraft, aircraft_id)
+    return db.get(Aircraft, aircraft_id)
 
 
 # =========================================================

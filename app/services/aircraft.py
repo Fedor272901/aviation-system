@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.crud import aircraft as aircraft_crud
 from app.models import SeatClass, ModelAircraft, ModelSeat, Aircraft, AircraftLease
 from app.schemas.aircraft import (
+    ModelSeatCreate,
     SeatClassCreate,
     ModelAircraftCreate,
     AircraftCreate,

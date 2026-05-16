@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
 from app.services.person import PersonService
+from app.utils.api_utils import raise_from_value_error
 from app.schemas.person import (
     PersonRead,
     PersonCreate,
@@ -49,7 +50,7 @@ def create_person(payload: PersonCreate, db: Session = Depends(get_db)):
     try:
         return service.create_person(payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.put(
@@ -63,7 +64,7 @@ def update_person(person_id: int, payload: PersonUpdate, db: Session = Depends(g
     try:
         return service.update_person(person_id, payload)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.put(
@@ -85,7 +86,7 @@ def change_password(
     try:
         return service.change_password(person_id, payload.old_password, payload.new_password)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
 
 
 @router.delete(
@@ -97,6 +98,6 @@ def delete_person(person_id: int, db: Session = Depends(get_db)):
     try:
         return service.delete_person(person_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise_from_value_error(e)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")

@@ -44,12 +44,12 @@ def list_ticket_statuses(db: Session = Depends(get_db)):
 def get_ticket_status(status_id: int, db: Session = Depends(get_db)):
     """Получить статус билета по ID."""
     service = TicketService(db)
-    status = service.get_ticket_status(status_id)
-    if not status:
+    status_ticket = service.get_ticket_status(status_id)
+    if not status_ticket:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Статус не найден"
         )
-    return status
+    return status_ticket
 
 
 @router.post(

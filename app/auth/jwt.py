@@ -1,18 +1,9 @@
-from datetime import datetime, timedelta, timezone
-from jose import jwt
-from dotenv import load_dotenv
-import os
+"""JWT helpers.
 
+Deprecated: используйте app.core.security напрямую.
+Сохранено для обратной совместимости импортов.
+"""
 
-load_dotenv()
+from app.core.security import create_access_token, verify_token
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_HOURS = os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", 1)
-
-
-def create_access_token(data: dict) -> str:
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+__all__ = ["create_access_token", "verify_token"]

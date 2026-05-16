@@ -8,11 +8,16 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from datetime import datetime
 from app.models import Ticket, TicketStatus, Flight, SeatClass, Person
-from app.schemas.ticket import TicketCreate, TicketUpdate, TicketSearch
+from app.schemas.ticket import TicketCreate, TicketStatusCreate, TicketUpdate, TicketSearch
 import logging
 
 logger = logging.getLogger(__name__)
 
+
+def _get_cancelled_status_id(db: Session) -> int | None:
+    """Возвращает ID статуса 'Отменён' или None, если статуса нет."""
+    status = db.scalar(select(TicketStatus).where(TicketStatus.status_name == "Отменён"))
+    return status.id if status else None
 
 # =========================================================
 # TICKET STATUS
@@ -174,13 +179,14 @@ def get_available_seats_for_flight(
 
     total_seats = model_seat.seat_count
 
-    occupied_seats = db.execute(
-        select(Ticket.seat_number).where(
-            Ticket.id_flight == flight_id,
-            Ticket.id_seat_class == seat_class_id,
-            Ticket.id_status != 3,
-        )
-    ).scalars().all()
+    cancelled_id = _get_cancelled_status_id(db)
+    query = select(Ticket.seat_number).where(
+        Ticket.id_flight == flight_id,
+        Ticket.id_seat_class == seat_class_id,
+    )
+    if cancelled_id:
+        query = query.where(Ticket.id_status != cancelled_id)
+    occupied_seats = db.execute(query).scalars().all()
 
     available = []
     for i in range(1, total_seats + 1):
@@ -312,11 +318,12 @@ def check_seat_occupied(
     db: Session, flight_id: int, seat_number: str
 ) -> bool:
     """Проверить, занято ли место на рейсе."""
-    existing = db.scalar(
-        select(Ticket).where(
-            Ticket.id_flight == flight_id,
-            Ticket.seat_number == seat_number,
-            Ticket.id_status != 3,
-        )
+    query = select(Ticket).where(
+        Ticket.id_flight == flight_id,
+        Ticket.seat_number == seat_number,
     )
+    cancelled_id = _get_cancelled_status_id(db)
+    if cancelled_id:
+        query = query.where(Ticket.id_status != cancelled_id)
+    existing = db.scalar(query)
     return existing is not None
