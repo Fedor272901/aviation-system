@@ -2,6 +2,7 @@
 
 from sqlalchemy.orm import Session
 from app.crud import ticket as ticket_crud
+from app.crud import person as person_crud
 from app.models import Ticket, TicketStatus
 from app.schemas.ticket import TicketCreate, TicketUpdate, TicketSearch
 import logging
@@ -62,9 +63,13 @@ class TicketService:
         if not seat_class:
             raise ValueError("Класс мест не найден")
 
-        passenger = ticket_crud.get_passenger(self.db, payload.id_passenger)
+        passenger = person_crud.get_person(self.db, payload.id_passenger)
         if not passenger:
             raise ValueError("Пассажир не найден")
+
+        # passenger = ticket_crud.get_passenger(self.db, payload.id_passenger)
+        # if not passenger:
+        #     raise ValueError("Пассажир не найден")
 
         status = ticket_crud.get_ticket_status(self.db, payload.id_status)
         if not status:

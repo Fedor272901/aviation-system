@@ -30,6 +30,24 @@ from app.schemas.ticket import (
 router = APIRouter(prefix="/tickets", tags=["Ticket"])
 
 
+def _check_self_or_admin(current_user: Person, target_id: int) -> None:
+    user_roles = {r.role.role_name for r in current_user.system_roles}
+    if current_user.id != target_id and "admin" not in user_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Нет доступа к данному ресурсу",
+        )
+
+
+def _check_ticket_owner_or_admin(current_user: Person, ticket) -> None:
+    user_roles = {r.role.role_name for r in current_user.system_roles}
+    if current_user.id != ticket.id_passenger and "admin" not in user_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Нет доступа к данному билету",
+        )
+
+
 # =========================================================
 # TICKET STATUSES
 # =========================================================
@@ -98,6 +116,7 @@ def list_tickets(
     skip: int = Query(0, ge=0, description="Пропустить N записей"),
     limit: int = Query(100, ge=1, le=1000, description="Максимум записей"),
     db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
 ):
     """Получить все билеты с пагинацией."""
     service = TicketService(db)
@@ -105,14 +124,20 @@ def list_tickets(
 
 
 @router.get("/{ticket_id}", response_model=TicketRead)
-def get_ticket(ticket_id: int, db: Session = Depends(get_db)):
-    """Получить билет по ID."""
+def get_ticket(
+    ticket_id: int,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(get_current_user),
+):
+    """Получить билет по ID. Доступно владельцу или админу."""
+
     service = TicketService(db)
     ticket = service.get_ticket(ticket_id)
     if not ticket:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Билет не найден"
         )
+    _check_ticket_owner_or_admin(current_user, ticket)
     return ticket
 
 
@@ -127,6 +152,8 @@ def create_ticket(
     current_user: Person = Depends(get_current_user),
 ):
     """Купить билет (требуется авторизация)."""
+    _check_self_or_admin(current_user, payload.id_passenger)
+
     service = TicketService(db)
     try:
         return service.create_ticket(payload)
@@ -165,35 +192,35 @@ def delete_ticket(
         raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")
 
 
-def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)):
-    """Купить билет."""
-    service = TicketService(db)
-    try:
-        return service.create_ticket(payload)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+# def create_ticket(payload: TicketCreate, db: Session = Depends(get_db)):
+#     """Купить билет."""
+#     service = TicketService(db)
+#     try:
+#         return service.create_ticket(payload)
+#     except ValueError as e:
+#         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/{ticket_id}", response_model=TicketRead)
-def update_ticket(ticket_id: int, payload: TicketUpdate, db: Session = Depends(get_db)):
-    """Обновить данные билета."""
-    service = TicketService(db)
-    try:
-        return service.update_ticket(ticket_id, payload)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+# @router.put("/{ticket_id}", response_model=TicketRead)
+# def update_ticket(ticket_id: int, payload: TicketUpdate, db: Session = Depends(get_db)):
+#     """Обновить данные билета."""
+#     service = TicketService(db)
+#     try:
+#         return service.update_ticket(ticket_id, payload)
+#     except ValueError as e:
+#         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/{ticket_id}", response_model=DeleteResponse)
-def delete_ticket(ticket_id: int, db: Session = Depends(get_db)):
-    """Удалить билет."""
-    service = TicketService(db)
-    try:
-        return service.delete_ticket(ticket_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")
+# @router.delete("/{ticket_id}", response_model=DeleteResponse)
+# def delete_ticket(ticket_id: int, db: Session = Depends(get_db)):
+#     """Удалить билет."""
+#     service = TicketService(db)
+#     try:
+#         return service.delete_ticket(ticket_id)
+#     except ValueError as e:
+#         raise HTTPException(status_code=400, detail=str(e))
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Ошибка при удалении: {str(e)}")
 
 
 # =========================================================
@@ -206,7 +233,11 @@ def delete_ticket(ticket_id: int, db: Session = Depends(get_db)):
     response_model=List[TicketRead],
     summary="Поиск билетов",
 )
-def search_tickets(criteria: TicketSearch, db: Session = Depends(get_db)):
+def search_tickets(
+    criteria: TicketSearch,
+    db: Session = Depends(get_db),
+    current_user: Person = Depends(require_admin),
+):
     """
     Поиск билетов по критериям.
 
@@ -227,8 +258,11 @@ def search_tickets(criteria: TicketSearch, db: Session = Depends(get_db)):
 def get_passenger_tickets(
     passenger_id: int,
     db: Session = Depends(get_db),
+    current_user: Person = Depends(get_current_user),
 ):
-    """Получить все билеты пассажира."""
+    """Получить все билеты пассажира. Доступно самому пассажиру или админу."""
+
+    _check_self_or_admin(current_user, passenger_id)
     service = TicketService(db)
     return service.get_tickets_by_passenger(passenger_id)
 
@@ -279,12 +313,20 @@ def cancel_ticket(
     current_user: Person = Depends(get_current_user),
 ):
     """
-    Отменить билет.
+    Отменить билет. Доступно владельцу или админу.
 
     Изменяет статус билета на "Отменён".
     Требуется авторизация.
     """
+
     service = TicketService(db)
+    ticket = service.get_ticket(ticket_id)
+    if not ticket:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Билет не найден"
+        )
+    _check_ticket_owner_or_admin(current_user, ticket)
+
     try:
         return service.cancel_ticket(ticket_id)
     except ValueError as e:

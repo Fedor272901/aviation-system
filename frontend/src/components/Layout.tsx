@@ -1,8 +1,10 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { isAdmin, isStaff } from '../utils/roles';
 
 export function Layout() {
   const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
 
@@ -16,15 +18,36 @@ export function Layout() {
       <nav className="nav">
         <div className="nav-inner">
           <span className="nav-brand">✈️ Aviation</span>
-          <NavLink to="/">Главная</NavLink>
-          <NavLink to="/persons">Пользователи</NavLink>
+          <NavLink to="/" end>Главная</NavLink>
           <NavLink to="/flights">Рейсы</NavLink>
+
+          {isAuthenticated && (
+            <>
+              <NavLink to="/tickets/my">Мои билеты</NavLink>
+              <NavLink to="/profile">Профиль</NavLink>
+            </>
+          )}
+
+          {isAuthenticated && isAdmin(user) && (
+            <>
+              <NavLink to="/persons">Пользователи</NavLink>
+              <NavLink to="/tickets">Билеты</NavLink>
+              <NavLink to="/aircraft">Самолёты</NavLink>
+              <NavLink to="/crew">Экипаж</NavLink>
+            </>
+          )}
+
+          {isAuthenticated && isStaff(user) && !isAdmin(user) && (
+            <NavLink to="/crew">Экипаж</NavLink>
+          )}
 
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
             {user ? (
               <>
                 <span style={{ fontSize: 14, color: '#555' }}>
                   {user.last_name} {user.first_name}
+                  {isAdmin(user) && ' (админ)'}
+                  {isStaff(user) && !isAdmin(user) && ' (экипаж)'}
                 </span>
                 <button
                   onClick={handleLogout}
@@ -35,9 +58,10 @@ export function Layout() {
                 </button>
               </>
             ) : (
-              <NavLink to="/login" style={{ fontSize: 14 }}>
-                Вход
-              </NavLink>
+              <>
+                <NavLink to="/login" style={{ fontSize: 14 }}>Вход</NavLink>
+                <NavLink to="/register" style={{ fontSize: 14 }}>Регистрация</NavLink>
+              </>
             )}
           </div>
         </div>

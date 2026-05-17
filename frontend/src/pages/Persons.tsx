@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { personApi } from '../services/api';
 import type { Person } from '../types';
 
@@ -21,7 +22,7 @@ export function Persons() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h1>Пользователи</h1>
-        <button className="btn btn-primary">+ Добавить</button>
+        <Link to="/register" className="btn btn-primary">+ Добавить</Link>
       </div>
       <table className="table">
         <thead>

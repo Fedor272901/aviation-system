@@ -5,14 +5,13 @@ from fastapi.responses import JSONResponse
 from app.routers import person, flight, aircraft, crew, ticket, auth
 from app.middleware import setup_cors
 from app.core.config import get_settings
+from app.core.logging_config import setup_logging
+from app.seed_data import seed_database
 
 settings = get_settings()
 
 # Настройка логирования
-logging.basicConfig(
-    level=logging.INFO if settings.DEBUG else logging.WARNING,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+setup_logging(level=logging.INFO if settings.DEBUG else logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
@@ -21,10 +20,18 @@ async def lifespan(app: FastAPI):
     if settings.DEBUG:
         # Только для локальной разработки без Alembic.
         # В production таблицы управляются миграциями!
-        from app.db import create_tables
+        from app.db import create_tables, SessionLocal
 
         create_tables()
         logger.info("Таблицы созданы (DEBUG-режим)")
+
+        # Заполняем справочники
+        db = SessionLocal()
+        try:
+            seed_database(db)
+        finally:
+            db.close()
+
     logger.info("Приложение запущено")
     yield
     logger.info("Приложение остановлено")

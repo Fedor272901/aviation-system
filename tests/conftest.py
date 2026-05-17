@@ -2,7 +2,7 @@
 
 import pytest
 from typing import Generator
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
@@ -60,7 +60,89 @@ def client(test_engine, test_db):
     app.dependency_overrides.clear()
 
 
-# Фикстуры для тестовых данных
+# =========================================================
+# АВТОРИЗАЦИЯ
+# =========================================================
+
+@pytest.fixture
+def user_token(client):
+    """Создаёт обычного пользователя и возвращает его JWT токен."""
+    user_data = {
+        "first_name": "Тест",
+        "last_name": "Тестов",
+        "middle_name": None,
+        "phone": "+79999999999",
+        "passport": "USER123456",
+        "email": "testuser@example.com",
+        "password": "Test1234!",
+    }
+    response = client.post("/api/v1/auth/register", json=user_data)
+    assert response.status_code == 200
+
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "testuser@example.com", "password": "Test1234!"},
+    )
+    assert login_response.status_code == 200
+    return login_response.json()["access_token"]
+
+
+@pytest.fixture
+def auth_headers(user_token):
+    """Заголовки с Bearer токеном обычного пользователя."""
+    return {"Authorization": f"Bearer {user_token}"}
+
+
+@pytest.fixture
+def admin_token(client, test_db):
+    """Создаёт администратора и возвращает его JWT токен."""
+    user_data = {
+        "first_name": "Админ",
+        "last_name": "Админов",
+        "middle_name": None,
+        "phone": "+78888888888",
+        "passport": "ADMIN00001",
+        "email": "admin@example.com",
+        "password": "Admin123!",
+    }
+    response = client.post("/api/v1/auth/register", json=user_data)
+    assert response.status_code == 200
+
+    # Назначаем роль admin через БД напрямую
+    from app.models import Person, SystemRole, PeopleSystemRole
+
+    user = test_db.scalar(select(Person).where(Person.email == "admin@example.com"))
+    admin_role = test_db.scalar(
+        select(SystemRole).where(SystemRole.role_name == "admin")
+    )
+    if not admin_role:
+        admin_role = SystemRole(role_name="admin")
+        test_db.add(admin_role)
+        test_db.commit()
+        test_db.refresh(admin_role)
+
+    assignment = PeopleSystemRole(person_id=user.id, role_id=admin_role.id)
+    test_db.add(assignment)
+    test_db.commit()
+
+    login_response = client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@example.com", "password": "Admin123!"},
+    )
+    assert login_response.status_code == 200
+    return login_response.json()["access_token"]
+
+
+@pytest.fixture
+def admin_headers(admin_token):
+    """Заголовки с Bearer токеном администратора."""
+    return {"Authorization": f"Bearer {admin_token}"}
+
+
+# =========================================================
+# ТЕСТОВЫЕ ДАННЫЕ
+# =========================================================
+
 @pytest.fixture
 def test_person_data():
     """Тестовые данные для пользователя."""

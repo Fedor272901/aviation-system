@@ -35,7 +35,6 @@ export const useAuthStore = create<AuthState>((set, get) => {
         // Сначала сохраняем токен в localStorage
         localStorage.setItem('token', data.access_token);
 
-
         // Получаем данные пользователя с уже сохранённым токеном
         const { data: userData } = await authApi.me();
         console.log('User data:', userData);
@@ -89,27 +88,17 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
     checkAuth: async () => {
       const storedToken = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
-
       if (!storedToken) {
-        set({ isAuthenticated: false, user: null, token: null });
+        set({ isAuthenticated: false, user: null, token: null, isLoading: false });
         return;
       }
-
       try {
         const { data } = await authApi.me();
-        localStorage.setItem('user', JSON.stringify(data));
-        set({
-          user: data,
-          token: storedToken,
-          isAuthenticated: true,
-        });
-      } catch (err: any) {
-        if (err.response?.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          set({ isAuthenticated: false, user: null, token: null });
-        }
+        set({ user: data, token: storedToken, isAuthenticated: true, isLoading: false });
+      } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        set({ isAuthenticated: false, user: null, token: null, isLoading: false });
       }
     },
   };
