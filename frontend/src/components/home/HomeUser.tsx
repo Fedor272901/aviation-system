@@ -24,13 +24,14 @@ export function HomeUser() {
         </p>
       </Link>
 
-      <div className="card">
+      <Link to="/profile" className="card" style={{ display: 'block' }}>
         <h3>👤 Профиль</h3>
         <p style={{ color: '#666', fontSize: 14, marginTop: 4 }}>
           {user?.last_name} {user?.first_name}<br />
           {user?.email}
         </p>
-      </div>
+      </Link>
+
     </HomeBase>
   );
 }

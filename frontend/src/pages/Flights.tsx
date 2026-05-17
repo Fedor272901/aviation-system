@@ -4,7 +4,7 @@ import { flightApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { isAdmin } from '../utils/roles';
 import { useApi } from '../hooks/useApi';
-import { Loading, ErrorMessage, PageHeader } from '../components/ui';
+import { Loading, ErrorMessage, PageHeader, ConfirmDialog } from '../components/ui';
 import type { Flight, Airport, Airline } from '../types';
 
 export function Flights() {
@@ -48,6 +48,9 @@ export function Flights() {
       if (data) setFlights(data);
     });
   };
+
+  const deleteApi = useApi<any>();
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const resetSearch = () => {
     setSearchFrom('');
@@ -104,6 +107,19 @@ export function Flights() {
         </form>
       </div>
 
+
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        title="Удалить рейс?"
+        message="Рейс и все связанные билеты будут удалены."
+        onConfirm={async () => {
+          if (!deleteId) return;
+          const result = await deleteApi.execute(flightApi.delete(deleteId));
+          if (result) { setDeleteId(null); loadFlights(); }
+        }}
+        onCancel={() => setDeleteId(null)}
+      />
+
       {/* Таблица */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table className="table">
@@ -137,6 +153,15 @@ export function Flights() {
                   <Link to={`/flights/${f.id}`} className="btn" style={{ padding: '4px 12px', fontSize: 13, background: '#f5f5f5' }}>
                     Подробнее
                   </Link>
+                  {isAdminUser && (
+                    <button
+                      onClick={() => setDeleteId(f.id)}
+                      className="btn btn-danger"
+                      style={{ padding: '4px 12px', fontSize: 13, marginLeft: 8 }}
+                    >
+                      Удалить
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

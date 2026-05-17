@@ -18,6 +18,12 @@ export function FlightDetail() {
   const flightApiState = useApi<Flight>();
   const pricesApi = useApi<FlightPrice[]>();
 
+  const [newPrice, setNewPrice] = useState('');
+  const [newClassId, setNewClassId] = useState(0);
+  const createPriceApi = useApi<any>();
+  const deletePriceApi = useApi<any>();
+  const [seatClasses, setSeatClasses] = useState<any[]>([]);
+
   useEffect(() => {
     flightApiState.execute(flightApi.getById(flightId)).then((data) => {
       if (data) setFlight(data);
@@ -25,7 +31,10 @@ export function FlightDetail() {
     pricesApi.execute(flightApi.getPrices(flightId)).then((data) => {
       if (data) setPrices(data);
     });
+    aircraftApi.getSeatClasses().then(({ data }) => setSeatClasses(data));
   }, [flightId]);
+
+
 
   if (flightApiState.loading) return <Loading />;
   if (flightApiState.error) return <ErrorMessage message={flightApiState.error} />;
@@ -84,6 +93,39 @@ export function FlightDetail() {
           <p style={{ color: '#999' }}>Цены не установлены</p>
         )}
       </div>
+
+      {isAdminUser && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <h3 style={{ marginBottom: 12 }}>Управление ценами</h3>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+            <select value={newClassId} onChange={(e) => setNewClassId(Number(e.target.value))} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd' }}>
+              <option value={0}>Класс</option>
+              {seatClasses.map((c) => (
+                <option key={c.id} value={c.id}>{c.class_name}</option>
+              ))}
+            </select>
+            <input type="number" placeholder="Цена" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', width: 120 }} />
+            <button
+              className="btn btn-primary"
+              disabled={!newClassId || !newPrice}
+              onClick={async () => {
+                const result = await createPriceApi.execute(flightApi.createPrice({
+                  id_flight: flightId,
+                  id_seat_class: newClassId,
+                  price: newPrice,
+                }));
+                if (result) {
+                  setNewPrice(''); setNewClassId(0);
+                  pricesApi.execute(flightApi.getPrices(flightId)).then((d) => { if (d) setPrices(d); });
+                }
+              }}
+            >
+              Добавить
+            </button>
+          </div>
+          {createPriceApi.error && <p style={{ color: '#c00', marginTop: 8 }}>{createPriceApi.error}</p>}
+        </div>
+      )}
     </div>
   );
 }

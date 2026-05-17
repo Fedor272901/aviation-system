@@ -3,7 +3,7 @@ import { ticketApi } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { isAdmin } from '../utils/roles';
 import { useApi } from '../hooks/useApi';
-import { Loading, ErrorMessage, PageHeader } from '../components/ui';
+import { Loading, ErrorMessage, PageHeader, ConfirmDialog } from '../components/ui';
 import { Navigate } from 'react-router-dom';
 import type { Ticket, TicketStatistics } from '../types';
 
@@ -14,6 +14,8 @@ export function Tickets() {
   const [stats, setStats] = useState<TicketStatistics | null>(null);
   const listApi = useApi<Ticket[]>();
   const statsApi = useApi<TicketStatistics>();
+  const deleteApi = useApi<any>();
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isAdminUser) return;
@@ -53,6 +55,18 @@ export function Tickets() {
         </div>
       )}
 
+      <ConfirmDialog
+        isOpen={!!deleteId}
+        title="Удалить билет?"
+        message="Билет будет удалён безвозвратно."
+        onConfirm={async () => {
+          if (!deleteId) return;
+          const result = await deleteApi.execute(ticketApi.delete(deleteId));
+          if (result) { setDeleteId(null); loadData(); }
+        }}
+        onCancel={() => setDeleteId(null)}
+      />
+
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <table className="table">
           <thead>
@@ -64,7 +78,9 @@ export function Tickets() {
               <th>Цена</th>
               <th>Статус</th>
               <th>Дата покупки</th>
+              <th></th>
             </tr>
+
           </thead>
           <tbody>
             {tickets.map((t) => (
@@ -76,6 +92,9 @@ export function Tickets() {
                 <td>{t.price} ₽</td>
                 <td>{t.status_name || t.id_status}</td>
                 <td>{new Date(t.purchase_date).toLocaleDateString('ru-RU')}</td>
+                <td>
+                  <button onClick={() => setDeleteId(t.id)} className="btn btn-danger" style={{ padding: '4px 8px', fontSize: 12 }}>Удалить</button>
+                </td>
               </tr>
             ))}
           </tbody>

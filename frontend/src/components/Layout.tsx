@@ -34,6 +34,8 @@ export function Layout() {
               <NavLink to="/tickets">Билеты</NavLink>
               <NavLink to="/aircraft">Самолёты</NavLink>
               <NavLink to="/crew">Экипаж</NavLink>
+              <NavLink to="/airports">Аэропорты</NavLink>
+              <NavLink to="/airlines">Авиакомпании</NavLink>
             </>
           )}
 

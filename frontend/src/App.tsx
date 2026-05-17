@@ -14,25 +14,24 @@ import { Register } from './pages/Register';
 import { Profile } from './pages/Profile';
 import { MyTickets } from './pages/MyTickets';
 import { Tickets } from './pages/Tickets';
+import { TicketBuy } from './pages/TicketBuy';
 import { CrewPage } from './pages/Crew';
 import { AircraftList } from './pages/AircraftList';
 import { AircraftDetail } from './pages/AircraftDetail';
 import { AircraftCreate } from './pages/AircraftCreate';
 import { AircraftEdit } from './pages/AircraftEdit';
+import { Airports } from './pages/Airports';
+import { Airlines } from './pages/Airlines';
+import { FlightStatuses } from './pages/FlightStatuses';
+import { SeatClasses } from './pages/SeatClasses';
+import { CrewRoles } from './pages/CrewRoles';
 import { NotFound } from './pages/NotFound';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
-
-  if (isLoading) {
-    return <div style={{ padding: 40, textAlign: 'center' }}>Загрузка...</div>;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (isLoading) return <div style={{ padding: 40, textAlign: 'center' }}>Загрузка...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -54,10 +53,7 @@ function StaffRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   const checkAuth = useAuthStore((s) => s.checkAuth);
-
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  useEffect(() => { checkAuth(); }, [checkAuth]);
 
   return (
     <Routes>
@@ -66,11 +62,10 @@ function App() {
         <Route path="/flights" element={<Flights />} />
         <Route path="/flights/:id" element={<FlightDetail />} />
 
-        {/* Авторизованные */}
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/tickets/my" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
+        <Route path="/tickets/buy" element={<ProtectedRoute><TicketBuy /></ProtectedRoute>} />
 
-        {/* Админ */}
         <Route path="/persons" element={<AdminRoute><Persons /></AdminRoute>} />
         <Route path="/tickets" element={<AdminRoute><Tickets /></AdminRoute>} />
         <Route path="/aircraft" element={<AdminRoute><AircraftList /></AdminRoute>} />
@@ -79,8 +74,12 @@ function App() {
         <Route path="/aircraft/:id/edit" element={<AdminRoute><AircraftEdit /></AdminRoute>} />
         <Route path="/flights/new" element={<AdminRoute><FlightCreate /></AdminRoute>} />
         <Route path="/flights/:id/edit" element={<AdminRoute><FlightEdit /></AdminRoute>} />
+        <Route path="/airports" element={<AdminRoute><Airports /></AdminRoute>} />
+        <Route path="/airlines" element={<AdminRoute><Airlines /></AdminRoute>} />
+        <Route path="/flight-statuses" element={<AdminRoute><FlightStatuses /></AdminRoute>} />
+        <Route path="/seat-classes" element={<AdminRoute><SeatClasses /></AdminRoute>} />
+        <Route path="/crew-roles" element={<AdminRoute><CrewRoles /></AdminRoute>} />
 
-        {/* Админ + Экипаж */}
         <Route path="/crew" element={<StaffRoute><CrewPage /></StaffRoute>} />
       </Route>
 
