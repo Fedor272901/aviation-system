@@ -6,3 +6,12 @@ __pycache__/
 .vscode/
 .idea/
 .local
+fastapi_app.db
+
+.coverage
+.coveragerc
+
+
+
+
+
