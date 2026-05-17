@@ -26,3 +26,31 @@ export interface Airport {
   name?: string;
   city: string;
 }
+
+export interface AuthUser {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  roles: string[];
+}
+
+export interface TokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  middle_name?: string;
+  phone?: string;
+  passport: string;
+}

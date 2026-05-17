@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from app.models import Person
+from app.models import Person, SystemRole
 from app.schemas.person import PersonCreate, PersonUpdate
 from app.auth.hashing import hash_password
 import logging
@@ -68,9 +68,7 @@ def update_person(db: Session, person: Person, payload: PersonUpdate) -> Person:
     return person
 
 
-def change_password(
-    db: Session, person: Person, new_password: str
-) -> Person:
+def change_password(db: Session, person: Person, new_password: str) -> Person:
     """Сменить пароль (без проверок - только UPDATE)."""
     person.password_hash = hash_password(new_password)
     db.commit()
@@ -95,3 +93,8 @@ def delete_person(db: Session, person: Person) -> dict:
         "deleted_id": person_id,
         "deleted_email": person_email,
     }
+
+
+def get_role_by_name(db: Session, role_name: str) -> SystemRole | None:
+    """Получить роль по имени."""
+    return db.scalar(select(SystemRole).where(SystemRole.role_name == role_name))
