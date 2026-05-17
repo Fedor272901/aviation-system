@@ -12,12 +12,12 @@ export function Profile() {
   const passwordApi = useApi<any>();
 
   const [form, setForm] = useState<PersonUpdate>({
-    first_name: user?.first_name || '',
-    last_name: user?.last_name || '',
+    first_name: '',
+    last_name: '',
     middle_name: '',
     phone: '',
     passport: '',
-    email: user?.email || '',
+    email: '',
   });
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export function Profile() {
     if (!user) return;
     const result = await updateApi.execute(personApi.update(user.id, form));
     if (result) {
-      checkAuth(); // Обновляем данные в store
+      checkAuth(); // Обновляем данные в store (теперь /auth/me отдаёт полные данные)
       alert('Профиль обновлён');
     }
   };
@@ -75,12 +75,26 @@ export function Profile() {
           <form onSubmit={handleUpdate} style={{ display: 'grid', gap: 12 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
+                <label style={{ fontSize: 13, color: '#666' }}>Фамилия</label>
+                <input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }} />
+              </div>
+              <div>
                 <label style={{ fontSize: 13, color: '#666' }}>Имя</label>
                 <input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }} />
               </div>
+            </div>
+            <div>
+              <label style={{ fontSize: 13, color: '#666' }}>Отчество</label>
+              <input value={form.middle_name} onChange={(e) => setForm({ ...form, middle_name: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <label style={{ fontSize: 13, color: '#666' }}>Фамилия</label>
-                <input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }} />
+                <label style={{ fontSize: 13, color: '#666' }}>Телефон</label>
+                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 13, color: '#666' }}>Паспорт</label>
+                <input value={form.passport} onChange={(e) => setForm({ ...form, passport: e.target.value })} style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ddd' }} />
               </div>
             </div>
             <div>

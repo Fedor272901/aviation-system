@@ -3,8 +3,8 @@
 Используются для валидации входных/выходных данных API.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing import Optional, Any
 from datetime import datetime
 from decimal import Decimal
 
@@ -137,6 +137,20 @@ class FlightRead(FlightBase):
     status_name: Optional[str] = Field(None, description="Статус рейса")
 
     model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def extract_related_names(cls, data: Any) -> Any:
+        """Извлекает коды аэропортов, имя авиакомпании и статус из relationship."""
+        if hasattr(data, "from_airport") and data.from_airport is not None:
+            data.from_airport_code = data.from_airport.code
+        if hasattr(data, "to_airport") and data.to_airport is not None:
+            data.to_airport_code = data.to_airport.code
+        if hasattr(data, "airline") and data.airline is not None:
+            data.airline_name = data.airline.name
+        if hasattr(data, "status") and data.status is not None:
+            data.status_name = data.status.status_name
+        return data
 
 
 class FlightSearch(BaseModel):

@@ -1,7 +1,7 @@
 """Схемы Pydantic для аутентификации."""
 
 from pydantic import BaseModel, EmailStr
-
+from typing import Optional
 
 class Token(BaseModel):
     """Ответ с JWT токеном."""
@@ -24,6 +24,9 @@ class AuthUserRead(BaseModel):
     email: str
     first_name: str
     last_name: str
+    middle_name: Optional[str] = None
+    phone: Optional[str] = None
+    passport: str
     roles: list[str]
 
     model_config = {"from_attributes": True}

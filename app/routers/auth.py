@@ -66,6 +66,9 @@ def register(payload: PersonCreate, db: Session = Depends(get_db)):
         "email": user.email,
         "first_name": user.first_name,
         "last_name": user.last_name,
+        "middle_name": user.middle_name,
+        "phone": user.phone,
+        "passport": user.passport,
         "roles": ["user"],
     }
 
@@ -99,5 +102,8 @@ def me(current_user: Person = Depends(get_current_user)):
         "email": current_user.email,
         "first_name": current_user.first_name,
         "last_name": current_user.last_name,
+        "middle_name": current_user.middle_name,
+        "phone": current_user.phone,
+        "passport": current_user.passport,
         "roles": [r.role.role_name for r in current_user.system_roles],
     }

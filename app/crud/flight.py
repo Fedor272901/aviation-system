@@ -4,7 +4,7 @@
 Бизнес-логика находится в services/.
 """
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import select, and_, or_, func
 from datetime import datetime
 from app.models import (
@@ -215,8 +215,18 @@ def delete_flight_status(db: Session, status: FlightStatus) -> dict:
 
 
 def get_flight(db: Session, flight_id: int) -> Flight | None:
-    """Получить рейс по ID."""
-    return db.get(Flight, flight_id)
+    """Получить рейс по ID с подгруженными связанными сущностями."""
+
+    return db.scalar(
+        select(Flight)
+        .where(Flight.id == flight_id)
+        .options(
+            selectinload(Flight.from_airport),
+            selectinload(Flight.to_airport),
+            selectinload(Flight.airline),
+            selectinload(Flight.status),
+        )
+    )
 
 
 def get_flight_by_number(db: Session, flight_number: str) -> Flight | None:
@@ -225,10 +235,20 @@ def get_flight_by_number(db: Session, flight_number: str) -> Flight | None:
 
 
 def get_all_flights(db: Session, skip: int = 0, limit: int = 100) -> list[Flight]:
-    """Получить все рейсы с пагинацией."""
+    """Получить все рейсы с пагинацией и подгруженными связанными сущностями."""
+
     return (
         db.execute(
-            select(Flight).order_by(Flight.departure_datetime).offset(skip).limit(limit)
+            select(Flight)
+            .order_by(Flight.departure_datetime)
+            .offset(skip)
+            .limit(limit)
+            .options(
+                selectinload(Flight.from_airport),
+                selectinload(Flight.to_airport),
+                selectinload(Flight.airline),
+                selectinload(Flight.status),
+            )
         )
         .scalars()
         .all()
@@ -254,7 +274,12 @@ def search_flights(db: Session, criteria: FlightSearch) -> list[Flight]:
     if criteria.id_airline:
         query = query.where(Flight.id_airline == criteria.id_airline)
 
-    query = query.order_by(Flight.departure_datetime)
+    query = query.order_by(Flight.departure_datetime).options(
+        selectinload(Flight.from_airport),
+        selectinload(Flight.to_airport),
+        selectinload(Flight.airline),
+        selectinload(Flight.status),
+    )
 
     return db.execute(query).scalars().all()
 
@@ -269,6 +294,12 @@ def get_upcoming_flights(db: Session, skip: int = 0, limit: int = 100) -> list[F
             .order_by(Flight.departure_datetime)
             .offset(skip)
             .limit(limit)
+            .options(
+                selectinload(Flight.from_airport),
+                selectinload(Flight.to_airport),
+                selectinload(Flight.airline),
+                selectinload(Flight.status),
+            )
         )
         .scalars()
         .all()
@@ -279,26 +310,22 @@ def get_flights_by_airport(
     db: Session, airport_id: int, is_departure: bool = True
 ) -> list[Flight]:
     """Получить все рейсы из/в аэропорт."""
+
+    query = select(Flight).options(
+        selectinload(Flight.from_airport),
+        selectinload(Flight.to_airport),
+        selectinload(Flight.airline),
+        selectinload(Flight.status),
+    )
     if is_departure:
-        return (
-            db.execute(
-                select(Flight)
-                .where(Flight.id_from == airport_id)
-                .order_by(Flight.departure_datetime)
-            )
-            .scalars()
-            .all()
+        query = query.where(Flight.id_from == airport_id).order_by(
+            Flight.departure_datetime
         )
     else:
-        return (
-            db.execute(
-                select(Flight)
-                .where(Flight.id_to == airport_id)
-                .order_by(Flight.departure_datetime)
-            )
-            .scalars()
-            .all()
+        query = query.where(Flight.id_to == airport_id).order_by(
+            Flight.departure_datetime
         )
+    return db.execute(query).scalars().all()
 
 
 def create_flight(db: Session, payload: FlightCreate) -> Flight:

@@ -98,7 +98,9 @@ class FlightService:
         if payload.code.upper() != airline.code:
             existing = flight_crud.get_airline_by_code(self.db, payload.code)
             if existing:
-                raise ValueError(f"Авиакомпания с кодом '{payload.code}' уже существует")
+                raise ValueError(
+                    f"Авиакомпания с кодом '{payload.code}' уже существует"
+                )
 
         return flight_crud.update_airline(self.db, airline, payload)
 
@@ -179,10 +181,14 @@ class FlightService:
         if not status:
             raise ValueError("Статус рейса не найден")
 
+        departure = payload.departure_datetime
+        if departure.tzinfo is None:
+            departure = departure.replace(tzinfo=timezone.utc)
+
         if payload.arrival_datetime <= payload.departure_datetime:
             raise ValueError("Время прилёта должно быть после времени вылета")
 
-        if payload.departure_datetime < datetime.now(timezone.utc):
+        if departure < datetime.now(timezone.utc):
             raise ValueError("Невозможно создать рейс в прошлом")
 
         return flight_crud.create_flight(self.db, payload)
@@ -212,9 +218,7 @@ class FlightService:
         tickets_count = flight_crud.count_flight_tickets(self.db, flight_id)
 
         if tickets_count > 0:
-            raise ValueError(
-                f"Нельзя удалить рейс: {tickets_count} проданных билетов"
-            )
+            raise ValueError(f"Нельзя удалить рейс: {tickets_count} проданных билетов")
 
         return flight_crud.delete_flight(self.db, flight)
 
@@ -251,6 +255,7 @@ class FlightService:
             raise ValueError("Рейс не найден")
 
         from app.models import SeatClass
+
         seat_class = self.db.get(SeatClass, payload.id_seat_class)
         if not seat_class:
             raise ValueError("Класс мест не найден")

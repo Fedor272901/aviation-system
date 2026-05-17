@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { flightApi } from '../services/api';
+import { flightApi, aircraftApi } from '../services/api';
 import { useApi } from '../hooks/useApi';
 import { Loading, ErrorMessage, PageHeader } from '../components/ui';
 import { useAuthStore } from '../store/authStore';
