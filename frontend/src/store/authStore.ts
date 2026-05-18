@@ -13,8 +13,7 @@ interface AuthState {
   checkAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => {
-  // Проверяем сохранённый токен при старте
+export const useAuthStore = create<AuthState>((set) => {
   const storedToken = localStorage.getItem('token');
   const storedUser = localStorage.getItem('user');
 
@@ -27,17 +26,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
     login: async (credentials: LoginCredentials) => {
       set({ isLoading: true });
       try {
-        console.log('Login attempt:', credentials.email);
         const { data } = await authApi.login(credentials.email, credentials.password);
 
-        console.log('Login success, token received:', data.access_token.substring(0, 20) + '...');
-
-        // Сначала сохраняем токен в localStorage
         localStorage.setItem('token', data.access_token);
-
-        // Получаем данные пользователя с уже сохранённым токеном
         const { data: userData } = await authApi.me();
-        console.log('User data:', userData);
         localStorage.setItem('user', JSON.stringify(userData));
 
         set({
@@ -47,8 +39,6 @@ export const useAuthStore = create<AuthState>((set, get) => {
           isLoading: false,
         });
       } catch (error: any) {
-        console.error('Login error:', error);
-        console.error('Error response:', error.response?.data);
         set({ isLoading: false });
         throw error;
       }

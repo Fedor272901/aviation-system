@@ -1,8 +1,7 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 from typing import List
-from pydantic import ConfigDict
-
+from pydantic import ConfigDict, field_validator
 
 class Settings(BaseSettings):
     # Database
@@ -25,6 +24,16 @@ class Settings(BaseSettings):
         env_file=".env",
         case_sensitive=True,
     )
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def validate_secret_key(cls, v: str) -> str:
+        if len(v) < 32:
+            raise ValueError(
+                "SECRET_KEY должен быть не менее 32 символов. "
+                "Сгенерируйте: openssl rand -hex 32"
+            )
+        return v
 
 
 @lru_cache()

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { extractErrorMessage } from '../utils/error';
 
 export function Register() {
   const [formData, setFormData] = useState({
@@ -13,10 +14,11 @@ export function Register() {
     phone: '',
     passport: '',
   });
-  
+
+  const [agreePD, setAgreePD] = useState(false); // ← состояние чекбокса
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const register = useAuthStore((state) => state.register);
   const navigate = useNavigate();
 
@@ -38,6 +40,12 @@ export function Register() {
       return;
     }
 
+    // ← проверка согласия
+    if (!agreePD) {
+      setError('Необходимо согласие на обработку персональных данных');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -52,7 +60,7 @@ export function Register() {
       });
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка регистрации');
+      setError(extractErrorMessage(err, 'Ошибка регистрации'));
     } finally {
       setLoading(false);
     }
@@ -146,7 +154,7 @@ export function Register() {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <div>
               <label style={{ display: 'block', marginBottom: 4, fontWeight: 500, fontSize: 14 }}>Пароль *</label>
               <input
@@ -170,6 +178,20 @@ export function Register() {
                 style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: 6 }}
               />
             </div>
+          </div>
+
+          {/* ← Чекбокс согласия на ПДн */}
+          <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <input
+              type="checkbox"
+              id="agree-pd"
+              checked={agreePD}
+              onChange={(e) => setAgreePD(e.target.checked)}
+              style={{ marginTop: 3 }}
+            />
+            <label htmlFor="agree-pd" style={{ fontSize: 13, color: '#555', lineHeight: 1.4 }}>
+              Я согласен на обработку персональных данных в соответствии с Федеральным законом №152-ФЗ
+            </label>
           </div>
 
           <button

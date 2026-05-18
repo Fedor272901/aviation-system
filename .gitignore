@@ -1,17 +1,42 @@
+# Python
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment (КРИТИЧНО!)
 .env
+.env.local
+.env.production
+.env.*.local
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 .local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+
+# Database (SQLite для тестов)
 fastapi_app.db
-
-.coverage
-.coveragerc
-
-
-
-
-

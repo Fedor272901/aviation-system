@@ -11,13 +11,13 @@ class PersonBase(BaseModel):
 
 
 class PersonCreate(PersonBase):
-    password: str = Field(..., min_length=6, max_length=72)
+    password: str = Field(..., min_length=8, max_length=72)
 
     @field_validator("password")
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
-        if len(v) < 6:
-            raise ValueError("Пароль должен быть не менее 6 символов")
+        if len(v) < 8:
+            raise ValueError("Пароль должен быть не менее 8 символов")
         if not any(c.isupper() for c in v):
             raise ValueError("Пароль должен содержать хотя одну заглавную букву")
         if not any(c.isdigit() for c in v):
@@ -39,14 +39,14 @@ class PasswordChange(BaseModel):
 
     old_password: str = Field(..., description="Текущий пароль")
     new_password: str = Field(
-        ..., min_length=6, max_length=72, description="Новый пароль"
+        ..., min_length=8, max_length=72, description="Новый пароль"
     )
 
     @field_validator("new_password")
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
-        if len(v) < 6:
-            raise ValueError("Пароль должен быть не менее 6 символов")
+        if len(v) < 8:
+            raise ValueError("Пароль должен быть не менее 8 символов")
         if not any(c.isupper() for c in v):
             raise ValueError("Пароль должен содержать хотя одну заглавную букву")
         if not any(c.isdigit() for c in v):

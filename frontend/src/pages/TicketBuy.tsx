@@ -15,6 +15,7 @@ export function TicketBuy() {
   const [prices, setPrices] = useState<any[]>([]);
   const [seatClasses, setSeatClasses] = useState<any[]>([]);
   const [availableSeats, setAvailableSeats] = useState<string[]>([]);
+  const [confirmedStatusId, setConfirmedStatusId] = useState<number | null>(null);
 
   const [selectedClass, setSelectedClass] = useState<number>(0);
   const [selectedSeat, setSelectedSeat] = useState('');
@@ -24,6 +25,17 @@ export function TicketBuy() {
   const classesApi = useApi<any[]>();
   const seatsApi = useApi<string[]>();
   const buyApi = useApi<any>();
+  const statusApi = useApi<any[]>();
+
+  // Загружаем статус "Подтверждён"
+  useEffect(() => {
+    statusApi.execute(ticketApi.getStatuses()).then((d) => {
+      if (d) {
+        const confirmed = d.find((s: any) => s.status_name === 'Подтверждён');
+        if (confirmed) setConfirmedStatusId(confirmed.id);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     if (!flightId) return;
@@ -41,13 +53,13 @@ export function TicketBuy() {
   }, [flightId, selectedClass]);
 
   const handleBuy = async () => {
-    if (!user || !selectedSeat || !selectedClass) return;
+    if (!user || !selectedSeat || !selectedClass || !confirmedStatusId) return;
     const price = prices.find((p) => p.id_seat_class === selectedClass)?.price || '0';
     const result = await buyApi.execute(ticketApi.create({
       seat_number: selectedSeat,
       id_seat_class: selectedClass,
       price,
-      id_status: 1,
+      id_status: confirmedStatusId,
       id_flight: flightId,
       id_passenger: user.id,
     }));
@@ -55,8 +67,9 @@ export function TicketBuy() {
   };
 
   if (!user) return <ErrorMessage message="Необходимо авторизоваться" />;
-  if (flightApiState.loading) return <Loading />;
+  if (statusApi.loading || flightApiState.loading) return <Loading />;
   if (!flight) return <ErrorMessage message="Рейс не найден" />;
+  if (!confirmedStatusId) return <ErrorMessage message="Не удалось загрузить статусы билетов" />;
 
   return (
     <div>

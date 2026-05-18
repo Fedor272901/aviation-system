@@ -26,6 +26,7 @@ import { FlightStatuses } from './pages/FlightStatuses';
 import { SeatClasses } from './pages/SeatClasses';
 import { CrewRoles } from './pages/CrewRoles';
 import { NotFound } from './pages/NotFound';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -56,37 +57,39 @@ function App() {
   useEffect(() => { checkAuth(); }, [checkAuth]);
 
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/flights" element={<Flights />} />
-        <Route path="/flights/:id" element={<FlightDetail />} />
+    <ErrorBoundary>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/flights" element={<Flights />} />
+          <Route path="/flights/:id" element={<FlightDetail />} />
 
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/tickets/my" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
-        <Route path="/tickets/buy" element={<ProtectedRoute><TicketBuy /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/tickets/my" element={<ProtectedRoute><MyTickets /></ProtectedRoute>} />
+          <Route path="/tickets/buy" element={<ProtectedRoute><TicketBuy /></ProtectedRoute>} />
 
-        <Route path="/persons" element={<AdminRoute><Persons /></AdminRoute>} />
-        <Route path="/tickets" element={<AdminRoute><Tickets /></AdminRoute>} />
-        <Route path="/aircraft" element={<AdminRoute><AircraftList /></AdminRoute>} />
-        <Route path="/aircraft/new" element={<AdminRoute><AircraftCreate /></AdminRoute>} />
-        <Route path="/aircraft/:id" element={<AdminRoute><AircraftDetail /></AdminRoute>} />
-        <Route path="/aircraft/:id/edit" element={<AdminRoute><AircraftEdit /></AdminRoute>} />
-        <Route path="/flights/new" element={<AdminRoute><FlightCreate /></AdminRoute>} />
-        <Route path="/flights/:id/edit" element={<AdminRoute><FlightEdit /></AdminRoute>} />
-        <Route path="/airports" element={<AdminRoute><Airports /></AdminRoute>} />
-        <Route path="/airlines" element={<AdminRoute><Airlines /></AdminRoute>} />
-        <Route path="/flight-statuses" element={<AdminRoute><FlightStatuses /></AdminRoute>} />
-        <Route path="/seat-classes" element={<AdminRoute><SeatClasses /></AdminRoute>} />
-        <Route path="/crew-roles" element={<AdminRoute><CrewRoles /></AdminRoute>} />
+          <Route path="/persons" element={<AdminRoute><Persons /></AdminRoute>} />
+          <Route path="/tickets" element={<AdminRoute><Tickets /></AdminRoute>} />
+          <Route path="/aircraft" element={<AdminRoute><AircraftList /></AdminRoute>} />
+          <Route path="/aircraft/new" element={<AdminRoute><AircraftCreate /></AdminRoute>} />
+          <Route path="/aircraft/:id" element={<AdminRoute><AircraftDetail /></AdminRoute>} />
+          <Route path="/aircraft/:id/edit" element={<AdminRoute><AircraftEdit /></AdminRoute>} />
+          <Route path="/flights/new" element={<AdminRoute><FlightCreate /></AdminRoute>} />
+          <Route path="/flights/:id/edit" element={<AdminRoute><FlightEdit /></AdminRoute>} />
+          <Route path="/airports" element={<AdminRoute><Airports /></AdminRoute>} />
+          <Route path="/airlines" element={<AdminRoute><Airlines /></AdminRoute>} />
+          <Route path="/flight-statuses" element={<AdminRoute><FlightStatuses /></AdminRoute>} />
+          <Route path="/seat-classes" element={<AdminRoute><SeatClasses /></AdminRoute>} />
+          <Route path="/crew-roles" element={<AdminRoute><CrewRoles /></AdminRoute>} />
 
-        <Route path="/crew" element={<StaffRoute><CrewPage /></StaffRoute>} />
-      </Route>
+          <Route path="/crew" element={<StaffRoute><CrewPage /></StaffRoute>} />
+        </Route>
 
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </ErrorBoundary>
   );
 }
 

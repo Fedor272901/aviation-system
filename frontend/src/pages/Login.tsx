@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { extractErrorMessage } from '../utils/error';
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -15,17 +16,12 @@ export function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    console.log('Form submitted, email:', email);
 
     try {
-      console.log('Calling login function...');
       await login({ email, password });
-      console.log('Login successful, navigating to /');
       navigate('/');
     } catch (err: any) {
-      console.error('Login failed:', err);
-      console.error('Error response:', err.response?.data);
-      setError(err.response?.data?.detail || 'Ошибка входа');
+      setError(extractErrorMessage(err, 'Ошибка входа'));
     } finally {
       setLoading(false);
     }

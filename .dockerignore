@@ -1,0 +1,59 @@
+# Git
+.git
+.gitignore
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment (критично для безопасности)
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Frontend dev
+frontend/node_modules/
+frontend/.vite/
+frontend/dist/          # собираем внутри Dockerfile
+frontend/coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests / CI
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.local
+
+# Docs
+*.md
+docs/
+
+# Docker itself
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Misc
+*.log
+*.md
+.DS_Store

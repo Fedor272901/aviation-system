@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { personApi } from '../services/api';
 import { useApi } from '../hooks/useApi';
-import { Loading, ErrorMessage, PageHeader } from '../components/ui';
+import { ErrorMessage, PageHeader } from '../components/ui';
 import type { PersonUpdate, PasswordChangeData } from '../types';
 
 export function Profile() {

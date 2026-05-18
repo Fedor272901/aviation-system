@@ -5,12 +5,11 @@ import { useAuthStore } from '../store/authStore';
 import { isAdmin } from '../utils/roles';
 import { useApi } from '../hooks/useApi';
 import { Loading, ErrorMessage, PageHeader, ConfirmDialog } from '../components/ui';
-import type { Flight, Airport, Airline } from '../types';
+import type { Flight, Airport } from '../types';
 
 export function Flights() {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [airports, setAirports] = useState<Airport[]>([]);
-  const [airlines, setAirlines] = useState<Airline[]>([]);
   const listApi = useApi<Flight[]>();
   const searchApi = useApi<Flight[]>();
   const user = useAuthStore((s) => s.user);
@@ -31,7 +30,7 @@ export function Flights() {
   useEffect(() => {
     loadFlights();
     flightApi.getAirports().then(({ data }) => setAirports(data));
-    flightApi.getAirlines().then(({ data }) => setAirlines(data));
+    // flightApi.getAirlines().then(({ data }) => setAirlines(data));
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {

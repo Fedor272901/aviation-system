@@ -1,4 +1,4 @@
-"""Seed-скрипт для заполнения базовых справочников и тестовых данных."""
+"""Seed-скрипт для заполнения базовых справочников."""
 
 import logging
 from sqlalchemy.orm import Session
@@ -10,8 +10,6 @@ from app.models import (
     FlightStatus,
     TicketStatus,
     SeatClass,
-    Airport,
-    Airline,
 )
 
 logger = logging.getLogger(__name__)
@@ -73,11 +71,13 @@ def seed_database(db: Session) -> None:
     logger.info("Справочники успешно проверены/заполнены")
 
 
-def seed_test_data(db: Session) -> None:
-    """Заполняет тестовые данные (аэропорты, авиакомпании).
-
-    Используется для демонстрации/разработки. Можно вызвать отдельно.
+def seed_dev_data(db: Session) -> None:
     """
+    Тестовые данные ТОЛЬКО для локальной разработки.
+    НЕ вызывать в production.
+    """
+    from app.models import Airport, Airline
+
     airports = [
         {"code": "SVO", "name": "Шереметьево", "city": "Москва"},
         {"code": "LED", "name": "Пулково", "city": "Санкт-Петербург"},
@@ -103,30 +103,3 @@ def seed_test_data(db: Session) -> None:
 
     db.commit()
     logger.info("Тестовые данные успешно проверены/заполнены")
-
-
-    # --- Тестовый админ (только для разработки) ---
-    from app.auth.hashing import hash_password
-    from app.models import Person, PeopleSystemRole
-
-    admin_exists = db.scalar(
-        select(Person).where(Person.email == "admin@example.com")
-    )
-    if not admin_exists:
-        admin = Person(
-            first_name="Админ",
-            last_name="Админов",
-            email="admin@example.com",
-            passport="ADMIN001",
-            password_hash=hash_password("Admin123!"),
-            phone="+70000000000",
-        )
-        db.add(admin)
-        db.commit()
-        db.refresh(admin)
-
-        admin_role = db.scalar(select(SystemRole).where(SystemRole.role_name == "admin"))
-        if admin_role:
-            db.add(PeopleSystemRole(person_id=admin.id, role_id=admin_role.id))
-            db.commit()
-            logger.info(f"Создан тестовый админ: admin@example.com / Admin123!")

@@ -21,7 +21,6 @@ export function FlightDetail() {
   const [newPrice, setNewPrice] = useState('');
   const [newClassId, setNewClassId] = useState(0);
   const createPriceApi = useApi<any>();
-  const deletePriceApi = useApi<any>();
   const [seatClasses, setSeatClasses] = useState<any[]>([]);
 
   useEffect(() => {
