@@ -1,0 +1,3734 @@
+/* ─── Artboard 3: BOARD — табло аэропорта во весь рост ──────────────── */
+/* global React, Topbar, Rail, SplitFlap, Sparkline, Ticker, HUD, StatusPill, FLIGHTS, T */
+
+function ArtBoard({ lang, setLang }) {
+  const t = T(lang);
+  const [page, setPage] = React.useState('home');
+
+  // build a long board of departures
+  const board = FLIGHTS.slice(0, 12).map((f, i) => ({
+    ...f,
+    time: f.dep,
+    cityName: f.to.city[lang],
+  }));
+
+  const series = [120, 135, 142, 138, 156, 148, 162, 158, 172, 168, 184, 178, 196, 188, 210];
+
+  return (
+    <div className="avia scanlines" data-theme="dark">
+      <div className="chrome">
+        <Topbar t={t} lang={lang} setLang={setLang} page={page} setPage={setPage}/>
+        <Rail t={t} page={page} setPage={setPage}/>
+        <div className="content" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="page-head">
+            <div>
+              <h1 className="page-h">{t.sections.board} <span className="badge">SVO · TERMINAL B</span></h1>
+              <div className="page-sub">{t.welcome} йцу qwe · <span style={{ color: 'var(--accent)' }}>{t.last} 12:42:18</span></div>
+            </div>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+              <HUD k="DAY" v="MON · 19 MAY" accent/>
+              <HUD k="DELAYED" v="3"/>
+              <HUD k="CANCELLED" v="1"/>
+              <button className="btn">EN-ROUTE</button>
+              <button className="btn btn-primary">{t.actions.new}</button>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14, padding: 14, minHeight: 0 }}>
+            {/* board */}
+            <div className="panel brackets" style={{ padding: 0, display: 'flex', flexDirection: 'column', minHeight: 0, background: '#06080a' }}>
+              {/* header row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '90px 80px 1.8fr 80px 80px 1fr', padding: '14px 18px', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                <span>TIME</span>
+                <span>FLIGHT</span>
+                <span>DEST</span>
+                <span>GATE</span>
+                <span>TERM</span>
+                <span>STATUS</span>
+              </div>
+              <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                {board.map((f, i) => (
+                  <div key={i} style={{
+                    display: 'grid',
+                    gridTemplateColumns: '90px 80px 1.8fr 80px 80px 1fr',
+                    padding: '11px 18px',
+                    borderBottom: '1px solid var(--border)',
+                    alignItems: 'center',
+                    background: i % 2 ? 'rgba(168,255,96,0.015)' : 'transparent',
+                  }}>
+                    <SplitFlap text={f.time} width={5} size={18}/>
+                    <SplitFlap text={f.no.slice(2)} width={4} size={14}/>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <SplitFlap text={f.to.iata} width={3} size={18}/>
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: 'var(--text-2)' }}>{f.cityName}</span>
+                    </div>
+                    <SplitFlap text={f.gate} width={3} size={14}/>
+                    <SplitFlap text="B" width={1} size={14}/>
+                    <StatusPill s={f.status} t={t}/>
+                  </div>
+                ))}
+              </div>
+              {/* board footer */}
+              <div style={{ borderTop: '1px solid var(--border)', padding: '10px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>
+                <span style={{ letterSpacing: '0.14em' }}>● SHOWING NEXT 12 DEPARTURES · {t.actions.refresh} 60s</span>
+                <span><span style={{ color: 'var(--accent)' }}>▸</span> SCROLL FOR MORE</span>
+              </div>
+            </div>
+
+            {/* right · summary */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
+              <div className="panel">
+                <div className="panel-head">
+                  <div className="panel-title"><span className="dot"/>{t.metrics.passengers}</div>
+                  <span className="metric-delta up">▲ 12%</span>
+                </div>
+                <div className="metric-val">38 421<span className="metric-unit">{t.units.pax}</span></div>
+                <Sparkline data={series} w={300} h={48}/>
+              </div>
+
+              <div className="panel">
+                <div className="panel-head">
+                  <div className="panel-title">{lang === 'ru' ? 'Сегодня · по часам' : 'Today · hourly'}</div>
+                </div>
+                {/* hourly bars */}
+                <svg viewBox="0 0 300 100" style={{ width: '100%', height: 100 }}>
+                  {Array.from({ length: 24 }, (_, h) => {
+                    const v = Math.abs(Math.sin(h * 0.7) * 0.6 + 0.4);
+                    const cur = h === 12;
+                    return (
+                      <g key={h}>
+                        <rect x={h * 12 + 2} y={100 - v * 90} width="8" height={v * 90}
+                          fill={cur ? 'var(--accent)' : 'var(--accent-dim)'}
+                          opacity={cur ? 1 : 0.55}/>
+                        {h % 4 === 0 && <text x={h * 12 + 6} y="14" fontSize="7" fill="var(--text-3)" fontFamily="var(--font-mono)" textAnchor="middle">{String(h).padStart(2, '0')}</text>}
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+
+              <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div className="panel-head">
+                  <div className="panel-title">{t.sections.weather} · NOW</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                  <BigWx label={t.weather.temp} v="-2°" sub="°C"/>
+                  <BigWx label={t.weather.wind} v="290°" sub="12 kt"/>
+                </div>
+                <div style={{ background: 'var(--panel-2)', border: '1px solid var(--border)', borderRadius: 'var(--r-sm)', padding: 10, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-2)', letterSpacing: '0.06em', flex: 1 }}>
+                  <div style={{ color: 'var(--accent)', marginBottom: 6 }}>METAR / UUEE</div>
+                  <div>UUEE 191230Z 29012KT 9999 BKN035 M02/M07</div>
+                  <div>Q1014 NOSIG=</div>
+                  <div style={{ marginTop: 8, color: 'var(--text-3)' }}>// no significant weather expected</div>
+                </div>
+              </div>
+
+              <div className="panel" style={{ flex: '0 0 auto' }}>
+                <div className="panel-head">
+                  <div className="panel-title">{lang === 'ru' ? 'Быстрые действия' : 'Quick actions'}</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <QuickBtn icon="+" label={t.cards.flights.t}/>
+                  <QuickBtn icon="◈" label={t.cards.planes.t}/>
+                  <QuickBtn icon="▭" label={t.cards.tickets.t}/>
+                  <QuickBtn icon="◉" label={t.cards.crew.t}/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Ticker items={[
+            { k: 'SVO·DEP', v: '46', delta: 1 },
+            { k: 'SVO·ARR', v: '52', delta: 0 },
+            { k: 'LED·DEP', v: '28', delta: 1 },
+            { k: 'AER·DEP', v: '14', delta: 0 },
+            { k: 'KZN·DEP', v: '11', delta: 1 },
+            { k: 'OVB·DEP', v: '9', delta: -1 },
+            { k: 'PAX·HOURLY', v: '2 341', delta: 1 },
+            { k: 'GATE-CHG', v: '2', delta: 0 },
+          ]}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BigWx({ label, v, sub }) {
+  return (
+    <div style={{ background: 'var(--panel-2)', border: '1px solid var(--border)', padding: 12, borderRadius: 'var(--r-sm)' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 500, color: 'var(--text)' }}>{v}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>{sub}</span>
+      </div>
+    </div>
+  );
+}
+
+function QuickBtn({ icon, label }) {
+  return (
+    <button className="btn" style={{ display: 'flex', justifyContent: 'flex-start', padding: 12, fontSize: 11 }}>
+      <span style={{ color: 'var(--accent)', marginRight: 8, fontSize: 14 }}>{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
+
+window.ArtBoard = ArtBoard;
+
+
+
+/* ─── Artboard 6: Билеты — продажи и статистика ─────────────────────── */
+/* global React, Topbar, Rail, Sparkline, SplitFlap, Ticker, HUD, StatusPill, Cap, FLIGHTS, T */
+
+function ArtTickets({ lang, setLang }) {
+  const t = T(lang);
+  const [page, setPage] = React.useState('tickets');
+
+  const sales = [38, 42, 48, 51, 47, 55, 61, 58, 65, 72, 68, 76, 84, 81, 88, 92, 86, 94, 102, 98, 106, 112, 118, 124];
+
+  const byClass = [
+    { name: t.classes.eco, n: 18421, rev: 184000000, pct: 64 },
+    { name: t.classes.biz, n: 4218, rev: 92400000, pct: 28 },
+    { name: t.classes.first, n: 482, rev: 21800000, pct: 8 },
+  ];
+
+  return (
+    <div className="avia" data-theme="dark">
+      <div className="chrome">
+        <Topbar t={t} lang={lang} setLang={setLang} page={page} setPage={setPage}/>
+        <Rail t={t} page={page} setPage={setPage}/>
+        <div className="content" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="page-head">
+            <div>
+              <h1 className="page-h">{t.ticketsHead} <span className="badge">{lang === 'ru' ? 'СЕГОДНЯ' : 'TODAY'}</span></h1>
+              <div className="page-sub">{lang === 'ru' ? 'Все продажи и статистика' : 'All sales and stats'}</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button className="btn">7D</button>
+              <button className="btn" style={{ background: 'var(--panel-3)', color: 'var(--accent)' }}>24H</button>
+              <button className="btn">30D</button>
+              <button className="btn">{t.actions.export}</button>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.5fr 360px', gap: 14, padding: 14, minHeight: 0, overflow: 'hidden' }}>
+            {/* left */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0, overflow: 'hidden' }}>
+              {/* big numbers */}
+              <div className="grid-4">
+                <BigStat label={t.metrics.revenue} v="₽298.2M" delta="+12.4%"/>
+                <BigStat label={lang === 'ru' ? 'Билетов продано' : 'Tickets sold'} v="23 121" delta="+8.1%"/>
+                <BigStat label={lang === 'ru' ? 'Средний чек' : 'Avg. ticket'} v="₽12 893" delta="-2.4%" down/>
+                <BigStat label={lang === 'ru' ? 'Конверсия' : 'Conversion'} v="14.8%" delta="+1.2 pp"/>
+              </div>
+
+              {/* chart */}
+              <div className="panel brackets" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                <div className="panel-head">
+                  <div className="panel-title"><span className="dot"/>{t.sections.sales} · 24H</div>
+                  <div style={{ display: 'flex', gap: 14 }}>
+                    <Legend color="var(--accent)" label={t.classes.eco}/>
+                    <Legend color="var(--info)" label={t.classes.biz}/>
+                    <Legend color="var(--warn)" label={t.classes.first}/>
+                  </div>
+                </div>
+                <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+                  <BigChart data={sales}/>
+                </div>
+              </div>
+
+              {/* recent purchases */}
+              <div className="panel" style={{ padding: 0, flex: '0 0 auto' }}>
+                <div className="panel-head" style={{ padding: '12px 16px 0' }}>
+                  <div className="panel-title">{lang === 'ru' ? 'Последние продажи' : 'Recent purchases'}</div>
+                  <span className="hud-line mono">LIVE · 2.0 Hz</span>
+                </div>
+                <table className="dtable">
+                  <thead>
+                    <tr>
+                      <th>{lang === 'ru' ? 'Заказ' : 'Order'}</th>
+                      <th>{t.cols.route}</th>
+                      <th>{t.cols.cls}</th>
+                      <th>{lang === 'ru' ? 'Пассажир' : 'Passenger'}</th>
+                      <th>{t.cols.price}</th>
+                      <th>{t.cols.status}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { id: '#A82-7412', from: 'SVO', to: 'AER', cls: t.classes.eco, pax: 'И. Иванов', price: '₽ 8 240', s: 'boarding' },
+                      { id: '#A82-7411', from: 'LED', to: 'IST', cls: t.classes.biz, pax: 'A. Petrov', price: '₽ 42 800', s: 'scheduled' },
+                      { id: '#A82-7410', from: 'SVO', to: 'DXB', cls: t.classes.first, pax: 'M. Smith', price: '₽ 184 200', s: 'scheduled' },
+                      { id: '#A82-7409', from: 'KZN', to: 'SVO', cls: t.classes.eco, pax: 'Е. Соколова', price: '₽ 4 920', s: 'arrived' },
+                      { id: '#A82-7408', from: 'OVB', to: 'IKT', cls: t.classes.eco, pax: 'Д. Кузнецов', price: '₽ 12 410', s: 'enroute' },
+                    ].map((r, i) => (
+                      <tr key={i}>
+                        <td className="mono" style={{ color: 'var(--accent)' }}>{r.id}</td>
+                        <td className="mono">{r.from} → {r.to}</td>
+                        <td>{r.cls}</td>
+                        <td>{r.pax}</td>
+                        <td className="mono" style={{ color: 'var(--text)', fontWeight: 500 }}>{r.price}</td>
+                        <td><StatusPill s={r.s} t={t}/></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* right · class breakdown + boarding pass + heat */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0, overflow: 'hidden' }}>
+              <div className="panel">
+                <div className="panel-head">
+                  <div className="panel-title">{lang === 'ru' ? 'По классам' : 'By class'}</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {byClass.map((c, i) => (
+                    <div key={i}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--text)' }}>{c.name}</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--accent)' }}>{c.pct}%</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginBottom: 6 }}>
+                        <span>{c.n.toLocaleString('ru-RU')} {t.units.pax}</span>
+                        <span>₽ {(c.rev / 1_000_000).toFixed(1)}M</span>
+                      </div>
+                      <Cap pct={c.pct}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* boarding pass preview */}
+              <div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.16em', marginBottom: 6 }}>
+                  {lang === 'ru' ? 'Образец посадочного' : 'Boarding pass preview'}
+                </div>
+                <div className="bpass">
+                  <div className="bpass-main">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="brand" style={{ fontSize: 11 }}>
+                        <span className="brand-mark" style={{ width: 18, height: 18 }}><svg width="9" height="9" viewBox="0 0 14 14"><path d="M2 8.5L6 6L7 2L8 6L12 8.5L8 9L7 12L6 9L2 8.5Z" fill="currentColor"/></svg></span>
+                        AVIA
+                      </span>
+                      <span className="mono" style={{ fontSize: 9, color: 'var(--text-3)' }}>BP-7412</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 12, gap: 8 }}>
+                      <Pole iata="SVO" city="Moscow"/>
+                      <span style={{ color: 'var(--accent)', fontSize: 14, paddingBottom: 4 }}>→</span>
+                      <Pole iata="AER" city="Sochi" right/>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 16, fontFamily: 'var(--font-mono)' }}>
+                      <BpField k="GATE" v="B14"/>
+                      <BpField k="SEAT" v="14A" hl/>
+                      <BpField k="BOARD" v="08:55" hl/>
+                    </div>
+                  </div>
+                  <div className="bpass-side">
+                    <BpField k="FLT" v="SU 2104" tight/>
+                    <Barcode/>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, color: 'var(--text-3)', letterSpacing: '0.18em', writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>AVIA · 2026</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+                <div className="panel-head">
+                  <div className="panel-title">{lang === 'ru' ? 'Топ маршруты' : 'Top routes'}</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11, flex: 1, overflow: 'hidden' }}>
+                  <RouteLine r="SVO → AER" n="3 218" rev="₽42.1M" pct={92}/>
+                  <RouteLine r="LED → SVO" n="2 854" rev="₽18.4M" pct={78}/>
+                  <RouteLine r="SVO → DXB" n="1 624" rev="₽48.8M" pct={88}/>
+                  <RouteLine r="SVO → IST" n="1 412" rev="₽22.6M" pct={64}/>
+                  <RouteLine r="KZN → SVO" n="1 188" rev="₽9.1M" pct={71}/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Ticker items={[
+            { k: 'REV-D', v: '₽298.2M', delta: 1 },
+            { k: 'TKT-D', v: '23 121', delta: 1 },
+            { k: 'AVG', v: '₽12 893', delta: -1 },
+            { k: 'REFUND', v: '142', delta: 0 },
+            { k: 'CONV', v: '14.8%', delta: 1 },
+            { k: 'PAYMENT-ERR', v: '0.4%', delta: -1 },
+          ]}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BigStat({ label, v, delta, down }) {
+  return (
+    <div className="panel">
+      <div className="metric-label">{label}</div>
+      <div className="metric-val" style={{ fontSize: 30, marginTop: 4 }}>{v}</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: down ? 'var(--danger)' : 'var(--accent)', marginTop: 6 }}>
+        {down ? '▼' : '▲'} {delta.replace('-', '')}
+      </div>
+    </div>
+  );
+}
+
+function Legend({ color, label }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.08em' }}>
+      <span style={{ width: 8, height: 8, background: color, borderRadius: 2, boxShadow: '0 0 4px ' + color }}/>
+      {label}
+    </span>
+  );
+}
+
+function BigChart({ data }) {
+  const w = 700, h = 260, pad = 30;
+  const max = Math.max(...data, 130);
+  const xs = data.map((_, i) => pad + (i / (data.length - 1)) * (w - pad * 2));
+  const ys = data.map(v => h - pad - (v / max) * (h - pad * 2));
+  // build path
+  const line = data.map((v, i) => (i ? 'L' : 'M') + xs[i].toFixed(1) + ' ' + ys[i].toFixed(1)).join(' ');
+  const fill = line + ` L ${xs[xs.length - 1]} ${h - pad} L ${xs[0]} ${h - pad} Z`;
+  // grid lines
+  const grids = [0.25, 0.5, 0.75, 1].map(f => h - pad - f * (h - pad * 2));
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" style={{ width: '100%', height: '100%', display: 'block' }}>
+      <defs>
+        <linearGradient id="big-grad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.4"/>
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      {/* gridlines */}
+      {grids.map((y, i) => (
+        <g key={i}>
+          <line x1={pad} x2={w - pad} y1={y} y2={y} stroke="var(--border)" strokeWidth="0.5" strokeDasharray="2 4"/>
+          <text x={pad - 6} y={y + 3} fill="var(--text-3)" fontFamily="var(--font-mono)" fontSize="8" textAnchor="end">{Math.round((1 - i / 4) * max)}</text>
+        </g>
+      ))}
+      {/* x labels */}
+      {[0, 6, 12, 18, 23].map(h2 => (
+        <text key={h2} x={pad + (h2 / 23) * (w - pad * 2)} y={h - pad + 14} fill="var(--text-3)" fontFamily="var(--font-mono)" fontSize="8" textAnchor="middle">{String(h2).padStart(2, '0')}:00</text>
+      ))}
+      <path d={fill} fill="url(#big-grad)"/>
+      <path d={line} fill="none" stroke="var(--accent)" strokeWidth="1.5" style={{ filter: 'drop-shadow(0 0 4px var(--accent-glow))' }}/>
+      {/* secondary line · business */}
+      <path d={data.map((v, i) => (i ? 'L' : 'M') + xs[i].toFixed(1) + ' ' + (h - pad - ((v * 0.4) / max) * (h - pad * 2)).toFixed(1)).join(' ')}
+        fill="none" stroke="var(--info)" strokeWidth="1.2" opacity="0.65"/>
+      {/* third · first */}
+      <path d={data.map((v, i) => (i ? 'L' : 'M') + xs[i].toFixed(1) + ' ' + (h - pad - ((v * 0.12) / max) * (h - pad * 2)).toFixed(1)).join(' ')}
+        fill="none" stroke="var(--warn)" strokeWidth="1.2" opacity="0.55"/>
+      {/* dots on main */}
+      {data.map((v, i) => (i % 3 === 0 ? <circle key={i} cx={xs[i]} cy={ys[i]} r="2" fill="var(--accent)"/> : null))}
+      {/* now marker */}
+      <line x1={pad + 0.55 * (w - pad * 2)} x2={pad + 0.55 * (w - pad * 2)} y1={pad} y2={h - pad} stroke="var(--accent)" strokeWidth="0.5" strokeDasharray="2 2" opacity="0.5"/>
+      <text x={pad + 0.55 * (w - pad * 2)} y={pad - 4} fill="var(--accent)" fontFamily="var(--font-mono)" fontSize="9" textAnchor="middle">NOW</text>
+    </svg>
+  );
+}
+
+function Pole({ iata, city, right }) {
+  return (
+    <div style={{ textAlign: right ? 'right' : 'left' }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 500, lineHeight: 1, letterSpacing: '-0.02em' }}>{iata}</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.14em', marginTop: 2 }}>{city}</div>
+    </div>
+  );
+}
+
+function BpField({ k, v, hl, tight }) {
+  return (
+    <div style={{ textAlign: tight ? 'center' : 'left' }}>
+      <div style={{ fontSize: 8, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>{k}</div>
+      <div style={{ fontSize: tight ? 11 : 14, color: hl ? 'var(--accent)' : 'var(--text)', fontWeight: 500, marginTop: 2 }}>{v}</div>
+    </div>
+  );
+}
+
+function Barcode() {
+  const bars = '11212131211231312121231312123121';
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 1, height: 36, padding: '4px 0' }}>
+      {bars.split('').map((c, i) => (
+        <span key={i} style={{ width: parseInt(c) + 'px', height: '100%', background: 'var(--text)' }}/>
+      ))}
+    </div>
+  );
+}
+
+function RouteLine({ r, n, rev, pct }) {
+  return (
+    <div style={{ padding: '6px 0', borderBottom: '1px dashed var(--border)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+        <span style={{ color: 'var(--text)', fontWeight: 600 }}>{r}</span>
+        <span style={{ color: 'var(--accent)' }}>{rev}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Cap pct={pct}/>
+        <span style={{ color: 'var(--text-3)', minWidth: 50, textAlign: 'right' }}>{n}</span>
+      </div>
+    </div>
+  );
+}
+
+window.ArtTickets = ArtTickets;
+
+
+
+/* ─── Artboard 5: Рейсы — список + детальная карточка ────────────────── */
+/* global React, Topbar, Rail, SplitFlap, Sparkline, Ticker, HUD, StatusPill, Cap, FLIGHTS, AIRPORTS, T */
+
+function ArtFlights({ lang, setLang }) {
+  const t = T(lang);
+  const [page, setPage] = React.useState('flights');
+  const [sel, setSel] = React.useState(2);
+  const list = FLIGHTS.slice(0, 12);
+  const f = list[sel] || list[0];
+
+  return (
+    <div className="avia" data-theme="dark">
+      <div className="chrome">
+        <Topbar t={t} lang={lang} setLang={setLang} page={page} setPage={setPage}/>
+        <Rail t={t} page={page} setPage={setPage}/>
+        <div className="content" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="page-head">
+            <div>
+              <h1 className="page-h">{t.flightsHead} <span className="badge">{list.length} {lang === 'ru' ? 'рейсов' : 'flights'}</span></h1>
+              <div className="page-sub">{lang === 'ru' ? 'Расписание · создание и редактирование' : 'Schedule · create and edit'}</div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ position: 'relative', width: 200 }}>
+                <input className="input" placeholder={t.actions.search} style={{ paddingLeft: 28 }}/>
+                <span style={{ position: 'absolute', left: 9, top: 8, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-3)' }}>⌕</span>
+              </div>
+              <button className="btn">{t.actions.filter}</button>
+              <button className="btn">{t.actions.export}</button>
+              <button className="btn btn-primary">+ {t.actions.new}</button>
+            </div>
+          </div>
+
+          {/* filter strip */}
+          <div style={{ display: 'flex', gap: 8, padding: '12px 24px', borderBottom: '1px solid var(--border)', alignItems: 'center', background: 'var(--panel)' }}>
+            {[
+              { k: 'all', label: lang === 'ru' ? 'Все' : 'All', n: 248, on: true },
+              { k: 'today', label: lang === 'ru' ? 'Сегодня' : 'Today', n: 46 },
+              { k: 'tomorrow', label: lang === 'ru' ? 'Завтра' : 'Tomorrow', n: 51 },
+              { k: 'enroute', label: t.status.enroute, n: 127 },
+              { k: 'boarding', label: t.status.boarding, n: 14 },
+              { k: 'delayed', label: t.status.delayed, n: 14, warn: true },
+              { k: 'cancelled', label: t.status.cancelled, n: 3, danger: true },
+            ].map(it => (
+              <button key={it.k} className="btn" style={{
+                background: it.on ? 'var(--panel-3)' : 'transparent',
+                borderColor: it.on ? 'var(--accent-dim)' : 'var(--border)',
+                color: it.on ? 'var(--accent)' : it.warn ? 'var(--warn)' : it.danger ? 'var(--danger)' : 'var(--text-2)',
+              }}>
+                {it.label} <span style={{ color: 'var(--text-3)', marginLeft: 4, fontVariantNumeric: 'tabular-nums' }}>{it.n}</span>
+              </button>
+            ))}
+            <div style={{ flex: 1 }}/>
+            <HUD k="GROUP" v="BY HUB"/>
+          </div>
+
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 380px', minHeight: 0 }}>
+            {/* list */}
+            <div style={{ overflow: 'auto', borderRight: '1px solid var(--border)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '60px 110px 1fr 90px 90px 90px 90px 70px', padding: '10px 18px', background: 'var(--panel-2)', borderBottom: '1px solid var(--border)', fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.14em', position: 'sticky', top: 0, zIndex: 1 }}>
+                <span>#</span><span>{t.cols.no}</span><span>{t.cols.route}</span><span>{t.cols.dep}</span><span>{t.cols.arr}</span><span>{t.cols.plane}</span><span>{t.cols.cap}</span><span>{t.cols.status}</span>
+              </div>
+              {list.map((it, i) => (
+                <div key={it.no} onClick={() => setSel(i)} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '60px 110px 1fr 90px 90px 90px 90px 70px',
+                  padding: '14px 18px',
+                  borderBottom: '1px solid var(--border)',
+                  cursor: 'pointer',
+                  alignItems: 'center',
+                  background: sel === i ? 'var(--panel-2)' : 'transparent',
+                  borderLeft: sel === i ? '2px solid var(--accent)' : '2px solid transparent',
+                  fontSize: 13,
+                }}>
+                  <span className="mono" style={{ color: 'var(--text-3)' }}>{String(i + 1).padStart(2, '0')}</span>
+                  <span className="mono" style={{ color: sel === i ? 'var(--accent)' : 'var(--text)', fontWeight: 600 }}>{it.no}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className="mono" style={{ color: 'var(--text)', fontWeight: 600 }}>{it.from.iata}</span>
+                    <span style={{ flex: 1, position: 'relative', height: 16, display: 'flex', alignItems: 'center' }}>
+                      <span style={{ position: 'absolute', left: 0, right: 0, top: '50%', borderTop: '1px dashed var(--border-2)' }}/>
+                      <span style={{ position: 'relative', margin: '0 auto', color: 'var(--accent)', fontSize: 10 }}>✈</span>
+                    </span>
+                    <span className="mono" style={{ color: 'var(--text)', fontWeight: 600 }}>{it.to.iata}</span>
+                  </span>
+                  <span className="mono" style={{ color: 'var(--text-2)' }}>{it.dep}</span>
+                  <span className="mono" style={{ color: 'var(--text-2)' }}>{it.arr}</span>
+                  <span className="mono" style={{ color: 'var(--text-3)' }}>{it.plane}</span>
+                  <Cap pct={it.cap}/>
+                  <StatusPill s={it.status} t={t}/>
+                </div>
+              ))}
+            </div>
+
+            {/* detail */}
+            <div style={{ background: 'var(--panel-2)', overflow: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* hero */}
+              <div className="panel brackets" style={{ padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <span className="hud-line"><span className="a">●</span> {t.status[f.status]}</span>
+                  <span className="mono" style={{ color: 'var(--text-3)', fontSize: 11 }}>{f.no}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+                  <Endpoint iata={f.from.iata} city={f.from.city[lang]} time={f.dep}/>
+                  <div style={{ flex: 1, padding: '0 8px' }}>
+                    <svg viewBox="0 0 200 40" style={{ width: '100%', height: 40 }}>
+                      <path d="M 4 30 Q 100 -10 196 30" stroke="var(--accent)" strokeWidth="1.2" fill="none" strokeDasharray="3 3"/>
+                      <circle cx="4" cy="30" r="3" fill="var(--accent)"/>
+                      <circle cx="196" cy="30" r="3" fill="var(--accent)"/>
+                      <g transform="translate(100, 10)">
+                        <text fontSize="9" fontFamily="var(--font-mono)" fill="var(--accent)" textAnchor="middle">✈</text>
+                      </g>
+                    </svg>
+                    <div style={{ textAlign: 'center', marginTop: 2, fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', letterSpacing: '0.1em' }}>
+                      3h 25m · 1842 km
+                    </div>
+                  </div>
+                  <Endpoint iata={f.to.iata} city={f.to.city[lang]} time={f.arr} right/>
+                </div>
+              </div>
+
+              {/* details grid */}
+              <div className="grid-2">
+                <Det label={t.cols.plane} v={f.plane} sub="RA-73821"/>
+                <Det label={t.cols.gate} v={f.gate} sub={lang === 'ru' ? 'Терминал B' : 'Terminal B'}/>
+                <Det label={t.cols.cap} v={f.cap + '%'} bar={f.cap} sub={`${Math.floor(f.cap * 1.8)} ${t.units.pax}`}/>
+                <Det label={t.cols.crew} v="6 / 6" sub={lang === 'ru' ? 'Назначены' : 'Assigned'}/>
+              </div>
+
+              {/* segment timeline */}
+              <div className="panel">
+                <div className="panel-head">
+                  <div className="panel-title">{lang === 'ru' ? 'Хронология сегмента' : 'Segment timeline'}</div>
+                  <span className="hud-line mono">+02:14:32</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                  <Step time="07:42" lbl={lang === 'ru' ? 'Чек-ин открыт' : 'Check-in opened'} done/>
+                  <Step time="08:55" lbl={t.status.boarding} done/>
+                  <Step time="09:18" lbl={lang === 'ru' ? 'Двери закрыты' : 'Doors closed'} done/>
+                  <Step time="09:25" lbl={lang === 'ru' ? 'Взлёт' : 'Takeoff'} cur/>
+                  <Step time="11:08" lbl={lang === 'ru' ? 'Посадка' : 'Landing'}/>
+                  <Step time="11:18" lbl={lang === 'ru' ? 'У гейта' : 'At gate'}/>
+                </div>
+              </div>
+
+              {/* actions */}
+              <div className="grid-2">
+                <button className="btn btn-primary">{lang === 'ru' ? 'Редактировать' : 'Edit flight'}</button>
+                <button className="btn">{lang === 'ru' ? 'Назначить экипаж' : 'Assign crew'}</button>
+                <button className="btn">{lang === 'ru' ? 'Сменить ВС' : 'Reassign A/C'}</button>
+                <button className="btn" style={{ color: 'var(--danger)', borderColor: 'rgba(255,91,91,0.35)' }}>{lang === 'ru' ? 'Отменить рейс' : 'Cancel flight'}</button>
+              </div>
+            </div>
+          </div>
+
+          <Ticker items={[
+            { k: 'TOTAL-FLT', v: '248', delta: 1 },
+            { k: 'EN-ROUTE', v: '127', delta: 0 },
+            { k: 'BOARDING', v: '14', delta: 1 },
+            { k: 'DELAYED', v: '14', delta: -1 },
+            { k: 'CXLD', v: '3', delta: 0 },
+            { k: 'NXT-WAVE', v: '12:30 · 18 dep', delta: 0 },
+          ]}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Endpoint({ iata, city, time, right }) {
+  return (
+    <div style={{ textAlign: right ? 'right' : 'left' }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 36, fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1, color: 'var(--text)' }}>{iata}</div>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: 13, color: 'var(--text-2)', marginTop: 4 }}>{city}</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--accent)', marginTop: 8, textShadow: '0 0 8px var(--accent-glow)' }}>{time}</div>
+    </div>
+  );
+}
+
+function Det({ label, v, sub, bar }) {
+  return (
+    <div className="panel" style={{ padding: 14 }}>
+      <div className="metric-label">{label}</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 20, color: 'var(--text)', marginTop: 4, fontWeight: 500 }}>{v}</div>
+      {bar != null && <div style={{ marginTop: 6 }}><Cap pct={bar}/></div>}
+      {sub && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{sub}</div>}
+    </div>
+  );
+}
+
+function Step({ time, lbl, done, cur }) {
+  const color = cur ? 'var(--accent)' : done ? 'var(--text-2)' : 'var(--text-3)';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0', borderLeft: '2px solid ' + (cur ? 'var(--accent)' : done ? 'var(--accent-dim)' : 'var(--border-2)'), paddingLeft: 10, position: 'relative' }}>
+      <span style={{ width: 6, height: 6, background: color, borderRadius: '50%', boxShadow: cur ? '0 0 6px var(--accent-glow)' : 'none', flexShrink: 0 }}/>
+      <span style={{ color: 'var(--text-3)', minWidth: 50 }}>{time}</span>
+      <span style={{ color, flex: 1 }}>{lbl}</span>
+      {cur && <span style={{ color: 'var(--accent)', fontSize: 9, letterSpacing: '0.1em' }}>NOW</span>}
+    </div>
+  );
+}
+
+window.ArtFlights = ArtFlights;
+
+
+
+/* ─── Artboard 1: COCKPIT — главная с центральным глобусом ──────────── */
+/* global React, Topbar, Rail, Globe, Sparkline, SplitFlap, Ticker, HUD, StatusPill, Cap, FLIGHTS, AIRPORTS, T */
+
+function ArtCockpit({ lang, setLang }) {
+  const t = T(lang);
+  const [page, setPage] = React.useState('home');
+
+  const liveFlights = FLIGHTS.slice(0, 6);
+  const tickerItems = [
+    { k: 'OTP', v: '94.2%', delta: 1 },
+    { k: 'IN-AIR', v: '127', delta: 0 },
+    { k: 'DELAY-AVG', v: '8min', delta: -1 },
+    { k: 'LOAD', v: '82%', delta: 1 },
+    { k: 'PAX-D', v: '38 421', delta: 1 },
+    { k: 'GATES', v: '46/62', delta: 0 },
+    { k: 'WX-SVO', v: '-2°C 290°/12kt', delta: 0 },
+    { k: 'REV', v: '₽ 28.4M', delta: 1 },
+    { k: 'CREW-DUTY', v: '512', delta: 0 },
+    { k: 'CXLD', v: '3', delta: -1 },
+  ];
+
+  const seriesA = [42, 48, 51, 47, 55, 61, 58, 65, 72, 68, 76, 84, 81, 88, 92, 86, 94, 102, 98, 106];
+  const seriesB = [120, 135, 142, 138, 156, 148, 162, 158, 172, 168, 184, 178, 196, 188, 210, 204, 218, 226, 220, 234];
+
+  return (
+    <div className="avia scanlines" data-theme="dark">
+      <div className="chrome">
+        <Topbar t={t} lang={lang} setLang={setLang} page={page} setPage={setPage}/>
+        <Rail t={t} page={page} setPage={setPage}/>
+        <div className="content" style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* page head */}
+          <div className="page-head">
+            <div>
+              <h1 className="page-h">
+                {t.home}
+                <span className="badge">● LIVE</span>
+              </h1>
+              <div className="page-sub">{t.welcome} йцу qwe · <span style={{ color: 'var(--accent)' }}>SVO HUB / GMT+3</span></div>
+            </div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <span className="hud-line">DAY <span className="v mono">137</span> · CYC <span className="v mono">A</span></span>
+              <button className="btn">{t.actions.refresh}</button>
+              <button className="btn btn-primary">{t.actions.new} +</button>
+            </div>
+          </div>
+
+          {/* main grid: metrics | globe | side */}
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '300px 1fr 320px', gap: 14, padding: 14, minHeight: 0, position: 'relative', zIndex: 2 }}>
+
+            {/* left column · metrics + sparks */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
+              <div className="panel brackets" style={{ flex: '0 0 auto' }}>
+                <div className="panel-head">
+                  <div className="panel-title"><span className="dot"/>{t.metrics.inAir}</div>
+                  <span className="hud-line mono">↑ +12 / 30min</span>
+                </div>
+                <div className="metric">
+                  <div className="metric-val">127<span className="metric-unit">/ 184 {t.units.planes}</span></div>
+                </div>
+                <Sparkline data={seriesA} w={260} h={48}/>
+              </div>
+
+              <div className="panel" style={{ flex: '0 0 auto' }}>
+                <div className="panel-head">
+                  <div className="panel-title">{t.metrics.revenue}</div>
+                  <span className="metric-delta up">▲ 8.2%</span>
+                </div>
+                <div className="metric-val">₽ 28.4<span className="metric-unit">M</span></div>
+                <Sparkline data={seriesB} w={260} h={42}/>
+              </div>
+
+              <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <div className="panel-head">
+                  <div className="panel-title">{t.sections.ops}</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <Row k={t.metrics.otp} v="94.2%" sub="▲ 1.4 pp"/>
+                  <Row k={t.metrics.load} v="82%" bar={82}/>
+                  <Row k={t.metrics.avgDelay} v={'8 ' + t.units.minutes} sub="▼ 2 min"/>
+                  <Row k={t.metrics.passengers} v="38 421" sub={'▲ 12% ' + t.units.pax}/>
+                  <Row k={t.metrics.crew} v="512" sub="↑ 24"/>
+                  <Row k={t.metrics.gates} v="46/62" bar={74}/>
+                </div>
+              </div>
+            </div>
+
+            {/* center · globe + live flights */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
+              <div className="panel" style={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0, padding: 8 }}>
+                <div className="panel-head" style={{ padding: '8px 12px 0', marginBottom: 0 }}>
+                  <div className="panel-title"><span className="dot"/>{t.sections.live}</div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <HUD k="ZOOM" v="1.0x" />
+                    <HUD k="PROJ" v="ORTHO" accent/>
+                    <HUD k="ARCS" v="6 ACTIVE" accent/>
+                  </div>
+                </div>
+                <div style={{ flex: 1, display: 'grid', placeItems: 'center', position: 'relative', overflow: 'hidden', minHeight: 0 }}>
+                  <div style={{ width: '85%', maxWidth: 520, aspectRatio: '1' }}>
+                    <Globe size={520} arcs={7}/>
+                  </div>
+                  {/* corner readouts */}
+                  <div style={{ position: 'absolute', top: 14, left: 14, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <HUD k="LAT" v="55.97°N"/>
+                    <HUD k="LON" v="37.41°E"/>
+                    <HUD k="ALT" v="0 FT"/>
+                  </div>
+                  <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', gap: 4, textAlign: 'right' }}>
+                    <HUD k="TRAFFIC" v="127" accent/>
+                    <HUD k="HUBS" v="12"/>
+                    <HUD k="SECTORS" v="38"/>
+                  </div>
+                  <div style={{ position: 'absolute', bottom: 14, left: 14, fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.15em' }}>
+                    EARTH-VIEW · ORTHOGRAPHIC · WGS-84
+                  </div>
+                  <div style={{ position: 'absolute', bottom: 14, right: 14 }}>
+                    <HUD k="REFRESH" v="2.0Hz" accent/>
+                  </div>
+                </div>
+              </div>
+
+              <div className="panel" style={{ flex: '0 0 auto', padding: 0 }}>
+                <div className="panel-head" style={{ padding: '12px 16px 0' }}>
+                  <div className="panel-title">{t.sections.activity}</div>
+                  <span className="hud-line mono">SHOWING 6 {t.of} 127</span>
+                </div>
+                <div style={{ maxHeight: 168, overflow: 'hidden' }}>
+                  {liveFlights.map(f => (
+                    <div key={f.no} className="flight-row" style={{ gridTemplateColumns: '60px 90px 1fr 70px 90px 26px' }}>
+                      <span className="flight-no">{f.no}</span>
+                      <span className="flight-iata">{f.from.iata}</span>
+                      <span className="flight-arc"/>
+                      <span className="flight-iata" style={{ textAlign: 'right' }}>{f.to.iata}</span>
+                      <StatusPill s={f.status} t={t}/>
+                      <span style={{ color: 'var(--text-3)', textAlign: 'right' }}>›</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* right · departures board + weather + quick actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
+              <div className="panel" style={{ flex: '0 0 auto' }}>
+                <div className="panel-head">
+                  <div className="panel-title"><span className="dot"/>{t.sections.board}</div>
+                  <span className="hud-line">SVO · T-B</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {FLIGHTS.slice(8, 13).map((f, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <SplitFlap text={f.dep} width={5} size={14}/>
+                      <SplitFlap text={f.to.iata} width={3} size={14}/>
+                      <span className="mono" style={{ fontSize: 10, color: 'var(--text-3)', minWidth: 26 }}>{f.gate}</span>
+                      <StatusPill s={f.status} t={t}/>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="panel" style={{ flex: '0 0 auto' }}>
+                <div className="panel-head">
+                  <div className="panel-title">{t.sections.weather}</div>
+                  <span className="hud-line mono">SVO</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <Wx label={t.weather.wind} v="290° 12kt" icon="↗"/>
+                  <Wx label={t.weather.vis} v="9999m" icon="◌"/>
+                  <Wx label={t.weather.cloud} v="BKN/035" icon="☁"/>
+                  <Wx label={t.weather.temp} v="-2°C" icon="❉"/>
+                </div>
+              </div>
+
+              <div className="panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                <div className="panel-head">
+                  <div className="panel-title">SYSTEM · {lang === 'ru' ? 'СОСТОЯНИЕ' : 'STATUS'}</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                  <SysLine ok label="ATC link"/>
+                  <SysLine ok label="Booking core"/>
+                  <SysLine ok label="Crew dispatch"/>
+                  <SysLine ok label="WX feed"/>
+                  <SysLine label="OAG sync" warn/>
+                  <SysLine ok label="Billing"/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ticker */}
+          <div style={{ position: 'relative', zIndex: 2 }}>
+            <Ticker items={tickerItems}/>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Row({ k, v, sub, bar }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{k}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 500, color: 'var(--text)' }}>{v}</span>
+      </div>
+      {sub && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--accent)' }}>{sub}</span>}
+      {bar != null && <Cap pct={bar}/>}
+    </div>
+  );
+}
+
+function Wx({ label, v, icon }) {
+  return (
+    <div style={{ background: 'var(--panel-2)', border: '1px solid var(--border)', padding: 10, borderRadius: 'var(--r-sm)' }}>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.12em', display: 'flex', justifyContent: 'space-between' }}>
+        <span>{label}</span><span style={{ color: 'var(--accent)' }}>{icon}</span>
+      </div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 14, color: 'var(--text)', marginTop: 4, fontWeight: 500 }}>{v}</div>
+    </div>
+  );
+}
+
+function SysLine({ label, ok, warn }) {
+  const color = warn ? 'var(--warn)' : ok ? 'var(--accent)' : 'var(--text-3)';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 0' }}>
+      <span style={{ width: 6, height: 6, background: color, borderRadius: 1, boxShadow: '0 0 6px ' + color }}/>
+      <span style={{ color: 'var(--text-2)', flex: 1 }}>{label}</span>
+      <span style={{ color, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10 }}>{warn ? 'SYNC' : 'OK'}</span>
+    </div>
+  );
+}
+
+window.ArtCockpit = ArtCockpit;
+
+
+
+/* ─── Artboard 4: GRID — плотный бенто-командный центр ───────────────── */
+/* global React, Topbar, Rail, Globe, RadarScope, Sparkline, SplitFlap, WorldMap, Ticker, HUD, StatusPill, Cap, FLIGHTS, AIRPORTS, T */
+
+function ArtGrid({ lang, setLang }) {
+  const t = T(lang);
+  const [page, setPage] = React.useState('home');
+
+  const s1 = [42, 48, 51, 47, 55, 61, 58, 65, 72, 68, 76, 84, 81, 88];
+  const s2 = [88, 92, 96, 91, 99, 105, 100, 108, 115, 112, 120, 124];
+
+  return (
+    <div className="avia" data-theme="dark">
+      <div className="chrome chrome--rail">
+        <Topbar t={t} lang={lang} setLang={setLang} page={page} setPage={setPage}/>
+        <Rail t={t} page={page} setPage={setPage} mini/>
+        <div className="content" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="page-head" style={{ padding: '14px 18px 10px' }}>
+            <div>
+              <h1 className="page-h" style={{ fontSize: 22 }}>{lang === 'ru' ? 'Командный центр' : 'Command Center'} <span className="badge">BENTO · DENSE</span></h1>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <HUD k="DAY" v="137"/>
+              <HUD k="SHIFT" v="A · 08-20"/>
+              <HUD k="USR" v="ЙЦУ"/>
+              <HUD k="MODE" v="OPS" accent/>
+            </div>
+          </div>
+
+          {/* dense bento grid */}
+          <div style={{
+            flex: 1,
+            padding: 12,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(12, 1fr)',
+            gridTemplateRows: 'repeat(8, 1fr)',
+            gap: 10,
+            minHeight: 0,
+            overflow: 'hidden',
+          }}>
+
+            {/* Big metric · in air */}
+            <Cell c="1 / 4" r="1 / 3">
+              <Tiny label={t.metrics.inAir} v="127" big delta="+12"/>
+              <Sparkline data={s1} w={200} h={28}/>
+            </Cell>
+
+            {/* Big metric · revenue */}
+            <Cell c="4 / 7" r="1 / 3">
+              <Tiny label={t.metrics.revenue} v="₽28.4M" big delta="+8.2%" />
+              <Sparkline data={s2} w={200} h={28}/>
+            </Cell>
+
+            {/* Big metric · OTP */}
+            <Cell c="7 / 10" r="1 / 3">
+              <Tiny label={t.metrics.otp} v="94.2%" big delta="+1.4 pp"/>
+              {/* gauge */}
+              <Gauge pct={94}/>
+            </Cell>
+
+            {/* Big metric · pax */}
+            <Cell c="10 / 13" r="1 / 3">
+              <Tiny label={t.metrics.passengers} v="38 421" big delta="+12%"/>
+              <Sparkline data={[120, 135, 142, 138, 156, 148, 162, 158, 172, 168, 184]} w={200} h={28}/>
+            </Cell>
+
+            {/* Globe */}
+            <Cell c="1 / 6" r="3 / 7" title={t.sections.live} dot pad={0}>
+              <div style={{ flex: 1, position: 'relative', display: 'grid', placeItems: 'center', padding: 6, minHeight: 0 }}>
+                <div style={{ width: '92%', maxWidth: 360, aspectRatio: '1' }}>
+                  <Globe size={360} arcs={5}/>
+                </div>
+                <div style={{ position: 'absolute', top: 8, left: 10 }}>
+                  <HUD k="HUBS" v="12" accent/>
+                </div>
+                <div style={{ position: 'absolute', top: 8, right: 10 }}>
+                  <HUD k="ARCS" v="6"/>
+                </div>
+              </div>
+            </Cell>
+
+            {/* Departures board */}
+            <Cell c="6 / 10" r="3 / 6" title={t.sections.board} dot pad={0}>
+              <div style={{ flex: 1, overflow: 'hidden' }}>
+                {FLIGHTS.slice(4, 9).map((f, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '60px 40px 1fr 60px', gap: 8, padding: '7px 12px', borderBottom: '1px solid var(--border)', alignItems: 'center' }}>
+                    <SplitFlap text={f.dep} width={5} size={12}/>
+                    <SplitFlap text={f.to.iata} width={3} size={12}/>
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 11, color: 'var(--text-2)' }}>{f.to.city[lang]}</span>
+                    <StatusPill s={f.status} t={t}/>
+                  </div>
+                ))}
+              </div>
+            </Cell>
+
+            {/* Radar mini */}
+            <Cell c="10 / 13" r="3 / 6" title="ATC SCOPE" dot pad={6}>
+              <div style={{ flex: 1, display: 'grid', placeItems: 'center', minHeight: 0 }}>
+                <div style={{ width: '92%', maxWidth: 200, aspectRatio: '1' }}>
+                  <RadarScope size={200} blips={8}/>
+                </div>
+              </div>
+            </Cell>
+
+            {/* Activity feed */}
+            <Cell c="6 / 10" r="6 / 8" title={t.sections.activity} pad={0}>
+              <div style={{ overflow: 'auto', flex: 1 }}>
+                <ActivityFeed lang={lang}/>
+              </div>
+            </Cell>
+
+            {/* Weather */}
+            <Cell c="10 / 13" r="6 / 8" title={t.sections.weather}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontFamily: 'var(--font-mono)' }}>
+                <Mini k={t.weather.temp} v="-2°C"/>
+                <Mini k={t.weather.wind} v="29012"/>
+                <Mini k={t.weather.vis} v="9999m"/>
+                <Mini k="QNH" v="1014"/>
+              </div>
+            </Cell>
+
+            {/* Fleet */}
+            <Cell c="1 / 6" r="7 / 9" title={t.sections.fleet} dot>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                <FleetLine name="Airbus A320" total={42} active={31}/>
+                <FleetLine name="Boeing 737-800" total={28} active={22}/>
+                <FleetLine name="Sukhoi SSJ-100" total={36} active={28}/>
+                <FleetLine name="Boeing 777-300ER" total={14} active={9}/>
+              </div>
+            </Cell>
+
+            {/* Heatmap */}
+            <Cell c="6 / 13" r="8 / 9" title={lang === 'ru' ? 'Сетка дня' : 'Day grid'}>
+              <DayHeatmap/>
+            </Cell>
+
+            {/* System */}
+            <Cell c="1 / 6" r="9 / 9" title="SYS">
+              <SysStrip/>
+            </Cell>
+          </div>
+
+          <Ticker items={[
+            { k: 'OTP', v: '94.2%', delta: 1 },
+            { k: 'LOAD', v: '82%', delta: 1 },
+            { k: 'DELAYS', v: '14', delta: -1 },
+            { k: 'PAX', v: '38 421', delta: 1 },
+            { k: 'REV-D', v: '₽28.4M', delta: 1 },
+            { k: 'GATES', v: '46/62', delta: 0 },
+            { k: 'WX-SVO', v: '-2°C/29012', delta: 0 },
+            { k: 'CREW', v: '512 OD', delta: 0 },
+          ]}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Cell({ children, c, r, title, dot, pad = 12 }) {
+  return (
+    <div style={{
+      gridColumn: c, gridRow: r,
+      background: 'var(--panel)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--r-md)',
+      padding: pad,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      minHeight: 0,
+      overflow: 'hidden',
+      position: 'relative',
+    }}>
+      {title && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: pad === 0 ? '8px 12px 0' : 0 }}>
+          {dot && <span className="dot" style={{ width: 6, height: 6, background: 'var(--accent)', borderRadius: '50%', boxShadow: '0 0 6px var(--accent-glow)' }}/>}
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>{title}</span>
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
+function Tiny({ label, v, big, delta }) {
+  return (
+    <div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 4 }}>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: big ? 26 : 18, fontWeight: 500, color: 'var(--text)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{v}</span>
+        {delta && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: delta.startsWith('-') ? 'var(--danger)' : 'var(--accent)' }}>{delta.startsWith('-') ? '▼' : '▲'} {delta.replace('-', '')}</span>}
+      </div>
+    </div>
+  );
+}
+
+function Gauge({ pct }) {
+  const r = 24;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg viewBox="0 0 80 50" style={{ width: '100%', height: 50 }}>
+      <circle cx="40" cy="40" r={r} fill="none" stroke="var(--panel-3)" strokeWidth="4" strokeDasharray={c / 2} strokeDashoffset="0" transform="rotate(180, 40, 40)"/>
+      <circle cx="40" cy="40" r={r} fill="none" stroke="var(--accent)" strokeWidth="4" strokeLinecap="round"
+        strokeDasharray={(c / 2) * (pct / 100) + ' ' + c} strokeDashoffset="0" transform="rotate(180, 40, 40)"
+        style={{ filter: 'drop-shadow(0 0 4px var(--accent-glow))' }}/>
+      <text x="40" y="42" fontSize="9" fill="var(--text-3)" textAnchor="middle" fontFamily="var(--font-mono)">{pct}%</text>
+    </svg>
+  );
+}
+
+function Mini({ k, v }) {
+  return (
+    <div style={{ background: 'var(--panel-2)', padding: '6px 8px', borderRadius: 4 }}>
+      <div style={{ fontSize: 8, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.14em' }}>{k}</div>
+      <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, marginTop: 2 }}>{v}</div>
+    </div>
+  );
+}
+
+function FleetLine({ name, total, active }) {
+  const pct = Math.round((active / total) * 100);
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+        <span style={{ color: 'var(--text-2)' }}>{name}</span>
+        <span style={{ color: 'var(--accent)' }}>{active}/{total}</span>
+      </div>
+      <Cap pct={pct}/>
+    </div>
+  );
+}
+
+function ActivityFeed({ lang }) {
+  const items = [
+    { t: '12:42', txt: lang === 'ru' ? 'Рейс SU2104 пошёл на посадку SVO 27L' : 'SU2104 cleared for approach SVO 27L', a: true },
+    { t: '12:38', txt: lang === 'ru' ? 'Новый билет · LED→AER · Бизнес · ₽42 800' : 'New ticket · LED→AER · Business · ₽42 800' },
+    { t: '12:35', txt: lang === 'ru' ? 'Экипаж #218 назначен на SU7811' : 'Crew #218 assigned to SU7811' },
+    { t: '12:31', txt: lang === 'ru' ? 'A320 RA-73821 — закончил ТО, готов к рейсам' : 'A320 RA-73821 — maintenance complete, ready' },
+    { t: '12:28', txt: lang === 'ru' ? 'Изменён гейт B12 → B14 для SU1819' : 'Gate change B12 → B14 for SU1819', warn: true },
+    { t: '12:21', txt: lang === 'ru' ? 'Открыт чек-ин SU3402 SVO→DXB' : 'Check-in opened SU3402 SVO→DXB' },
+  ];
+  return (
+    <div>
+      {items.map((it, i) => (
+        <div key={i} style={{ display: 'grid', gridTemplateColumns: '46px 1fr', gap: 8, padding: '7px 12px', borderBottom: '1px solid var(--border)', fontSize: 11 }}>
+          <span style={{ fontFamily: 'var(--font-mono)', color: it.a ? 'var(--accent)' : 'var(--text-3)' }}>{it.t}</span>
+          <span style={{ color: it.warn ? 'var(--warn)' : 'var(--text-2)' }}>{it.txt}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DayHeatmap() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(24, 1fr)', gap: 2, flex: 1 }}>
+      {Array.from({ length: 24 }, (_, h) => {
+        const v = Math.abs(Math.sin(h * 0.7) * 0.6 + 0.4);
+        const cur = h === 12;
+        return (
+          <div key={h} style={{
+            background: `rgba(168, 255, 96, ${v * 0.55 + 0.05})`,
+            border: cur ? '1px solid var(--accent)' : '1px solid transparent',
+            borderRadius: 2,
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+            padding: 2,
+          }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 7, color: '#0a0d0a', fontWeight: 600 }}>{String(h).padStart(2, '0')}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SysStrip() {
+  const items = ['ATC', 'BKG', 'CREW', 'WX', 'BILL', 'OAG', 'KRA', 'API'];
+  return (
+    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      {items.map((s, i) => (
+        <span key={i} style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 9,
+          padding: '3px 6px',
+          background: i === 5 ? 'rgba(255, 184, 77, 0.1)' : 'rgba(168, 255, 96, 0.05)',
+          color: i === 5 ? 'var(--warn)' : 'var(--accent)',
+          border: '1px solid currentColor',
+          borderRadius: 3,
+          letterSpacing: '0.08em',
+        }}>{s}</span>
+      ))}
+    </div>
+  );
+}
+
+window.ArtGrid = ArtGrid;
+
+
+/* ─── Artboard 2: RADAR — диспетчерская сводка с радаром ────────────── */
+/* global React, Topbar, Rail, RadarScope, Sparkline, SplitFlap, Ticker, HUD, StatusPill, Cap, FLIGHTS, T */
+
+function ArtRadar({ lang, setLang }) {
+  const t = T(lang);
+  const [page, setPage] = React.useState('home');
+
+  const series1 = [88, 92, 96, 91, 99, 105, 100, 108, 115, 112, 120, 124, 131, 127, 134, 140];
+  const series2 = [62, 65, 70, 68, 74, 78, 75, 80, 84, 82, 88, 85, 91, 94, 92, 96];
+  const series3 = [22, 18, 26, 31, 28, 35, 33, 28, 24, 30, 27, 25, 22, 19, 22, 18];
+
+  return (
+    <div className="avia" data-theme="dark">
+      <div className="chrome chrome--rail">
+        <Topbar t={t} lang={lang} setLang={setLang} page={page} setPage={setPage}/>
+        <Rail t={t} page={page} setPage={setPage} mini/>
+        <div className="content" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div className="page-head">
+            <div>
+              <h1 className="page-h">{lang === 'ru' ? 'Диспетчерская' : 'Air Traffic Control'} <span className="badge">SCOPE · LIVE</span></h1>
+              <div className="page-sub">SECTOR R-12 · {t.welcome} йцу qwe</div>
+            </div>
+            <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+              <HUD k="MODE" v="EN-ROUTE" accent/>
+              <HUD k="RANGE" v="640 NM"/>
+              <HUD k="AGL" v="STD"/>
+              <button className="btn">{t.actions.filter}</button>
+              <button className="btn btn-primary">{t.actions.new}</button>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14, padding: 14, minHeight: 0 }}>
+            {/* radar scope */}
+            <div className="panel brackets" style={{ display: 'flex', flexDirection: 'column', padding: 0, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ flex: 1, display: 'grid', placeItems: 'center', position: 'relative', padding: 12, minHeight: 0 }}>
+                <div style={{ width: '92%', maxWidth: 560, aspectRatio: '1' }}>
+                  <RadarScope size={560} blips={14}/>
+                </div>
+                {/* overlay readouts */}
+                <div style={{ position: 'absolute', top: 14, left: 16, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <HUD k="SCOPE" v="R-12" accent/>
+                  <HUD k="BRT" v="0.78"/>
+                  <HUD k="GAIN" v="AUTO"/>
+                </div>
+                <div style={{ position: 'absolute', top: 14, right: 16, textAlign: 'right' }}>
+                  <div className="metric-label">{t.metrics.inAir}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 38, color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)', fontVariantNumeric: 'tabular-nums' }}>127</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--text-3)' }}>OF 184 A/C</div>
+                </div>
+                <div style={{ position: 'absolute', bottom: 14, left: 16, display: 'flex', gap: 16, fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--text-3)', letterSpacing: '0.14em' }}>
+                  <span><span style={{ color: 'var(--accent)' }}>●</span> EN-ROUTE 88</span>
+                  <span><span style={{ color: 'var(--info)' }}>●</span> APPROACH 14</span>
+                  <span><span style={{ color: 'var(--warn)' }}>●</span> HOLDING 5</span>
+                  <span><span style={{ color: 'var(--danger)' }}>●</span> DIVERTED 1</span>
+                </div>
+              </div>
+              {/* traffic strip */}
+              <div style={{ borderTop: '1px solid var(--border)', padding: '10px 14px', display: 'flex', gap: 10, overflow: 'hidden', background: 'var(--panel-2)' }}>
+                {FLIGHTS.slice(0, 5).map(f => (
+                  <div key={f.no} style={{ background: 'var(--panel)', border: '1px solid var(--border-2)', borderLeft: '2px solid var(--accent)', padding: '6px 10px', minWidth: 130, fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}>{f.no}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-2)' }}>{f.from.iata}→{f.to.iata}</div>
+                    <div style={{ fontSize: 9, color: 'var(--text-3)' }}>FL340 · M.78</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* right · stack of metrics */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minHeight: 0 }}>
+              <div className="grid-3">
+                <Stat label={t.metrics.inAir} v="127" delta="+12" trend={series1}/>
+                <Stat label={t.metrics.onGround} v="57" delta="-3" trend={series2}/>
+                <Stat label={t.metrics.delays} v="14" delta="-2" trend={series3} down/>
+              </div>
+
+              <div className="panel" style={{ flex: '0 0 auto' }}>
+                <div className="panel-head">
+                  <div className="panel-title"><span className="dot"/>{lang === 'ru' ? 'Очередь на посадку' : 'Approach queue'}</div>
+                  <span className="hud-line mono">SVO · 27L</span>
+                </div>
+                <table className="dtable">
+                  <thead>
+                    <tr>
+                      <th>SEQ</th><th>{t.cols.no}</th><th>{t.cols.plane}</th><th>ETA</th><th>{t.cols.status}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {FLIGHTS.slice(2, 7).map((f, i) => (
+                      <tr key={f.no}>
+                        <td className="mono" style={{ color: 'var(--accent)', fontWeight: 600 }}>{i + 1}</td>
+                        <td className="mono">{f.no}</td>
+                        <td className="mono">{f.plane}</td>
+                        <td className="mono">{f.arr}</td>
+                        <td><StatusPill s={['enroute','enroute','boarding','scheduled','delayed'][i]} t={t}/></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="grid-2" style={{ flex: 1, minHeight: 0 }}>
+                <div className="panel" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div className="panel-head">
+                    <div className="panel-title">RUNWAY · 27L</div>
+                    <span className="hud-line mono a">ACTIVE</span>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontFamily: 'var(--font-mono)', fontSize: 11 }}>
+                      <RunwayLine k="WIND" v="290°/12kt"/>
+                      <RunwayLine k="QNH" v="1014"/>
+                      <RunwayLine k="VIS" v="9999m"/>
+                      <RunwayLine k="ILS" v="LOC/GS"/>
+                    </div>
+                    {/* runway visualization */}
+                    <svg viewBox="0 0 200 60" style={{ width: '100%', height: 50, marginTop: 12 }}>
+                      <rect x="10" y="22" width="180" height="16" fill="var(--panel-3)" stroke="var(--accent-dim)" strokeWidth="0.5"/>
+                      <g stroke="var(--accent)" strokeWidth="1" strokeDasharray="6 4">
+                        <line x1="20" y1="30" x2="180" y2="30"/>
+                      </g>
+                      <text x="14" y="34" fontSize="7" fill="var(--accent)" fontFamily="var(--font-mono)">27L</text>
+                      <text x="184" y="34" fontSize="7" fill="var(--accent)" fontFamily="var(--font-mono)" textAnchor="end">09R</text>
+                      <text x="100" y="14" fontSize="6" fill="var(--text-3)" fontFamily="var(--font-mono)" textAnchor="middle">3700 × 60 m</text>
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="panel" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div className="panel-head">
+                    <div className="panel-title">{lang === 'ru' ? 'Связь' : 'Comms'}</div>
+                    <span className="hud-line mono">VHF · 119.30</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--text-2)' }}>
+                    <CommLine call="SU-2104" msg="cleared ILS 27L"/>
+                    <CommLine call="SU-1819" msg="contact ground 121.8"/>
+                    <CommLine call="SU-7327" msg="hold short B"/>
+                    <CommLine call="SU-3402" msg="line up and wait"/>
+                    <CommLine call="SU-9118" msg="climb FL340" hot/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Ticker items={[
+            { k: 'SECTOR LOAD', v: '78%', delta: 1 },
+            { k: 'AVG SEP', v: '5.2 NM', delta: 0 },
+            { k: 'HANDOFF Q', v: '3', delta: -1 },
+            { k: 'CONFLICT ALRT', v: 'NONE', delta: 0 },
+            { k: 'WX-EN-RT', v: 'CLR', delta: 0 },
+            { k: 'NEXT-HND', v: 'KZN-CTR · 04:12', delta: 0 },
+          ]}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, v, delta, trend, down }) {
+  return (
+    <div className="panel" style={{ padding: 14 }}>
+      <div className="metric-label">{label}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 6 }}>
+        <div className="metric-val" style={{ fontSize: 30 }}>{v}</div>
+        <span className={'metric-delta ' + (down ? 'up' : 'up')} style={{ color: down ? 'var(--accent)' : 'var(--accent)' }}>{delta}</span>
+      </div>
+      <Sparkline data={trend} w={200} h={28}/>
+    </div>
+  );
+}
+
+function RunwayLine({ k, v }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: '1px dashed var(--border)' }}>
+      <span style={{ color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10 }}>{k}</span>
+      <span style={{ color: 'var(--text)', fontWeight: 500 }}>{v}</span>
+    </div>
+  );
+}
+
+function CommLine({ call, msg, hot }) {
+  return (
+    <div style={{ display: 'flex', gap: 8, padding: '4px 8px', background: hot ? 'rgba(168,255,96,0.06)' : 'transparent', borderLeft: hot ? '2px solid var(--accent)' : '2px solid transparent' }}>
+      <span style={{ color: hot ? 'var(--accent)' : 'var(--text-3)', minWidth: 56 }}>{call}</span>
+      <span style={{ color: 'var(--text-2)', flex: 1 }}>{msg}</span>
+      {hot && <span style={{ color: 'var(--accent)', fontSize: 9, animation: 'blink 1s infinite' }}>● TX</span>}
+    </div>
+  );
+}
+
+window.ArtRadar = ArtRadar;
+
+
+
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AVIA · Ops Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #1a1814; font-family: 'Space Grotesk', system-ui, sans-serif; }
+  #root { height: 100%; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="shared.jsx"></script>
+<script type="text/babel" src="art-cockpit.jsx"></script>
+<script type="text/babel" src="art-radar.jsx"></script>
+<script type="text/babel" src="art-board.jsx"></script>
+<script type="text/babel" src="art-grid.jsx"></script>
+<script type="text/babel" src="art-flights.jsx"></script>
+<script type="text/babel" src="art-tickets.jsx"></script>
+<script type="text/babel" src="main.jsx"></script>
+</body>
+</html>
+
+
+
+// DesignCanvas.jsx — Figma-ish design canvas wrapper
+// Warm gray grid bg + Sections + Artboards + PostIt notes.
+// Artboards are reorderable (grip-drag), deletable, labels/titles are
+// inline-editable, and any artboard can be opened in a fullscreen focus
+// overlay (←/→/Esc). State persists to a .design-canvas.state.json sidecar
+// via the host bridge. No assets, no deps.
+//
+// Usage:
+//   <DesignCanvas>
+//     <DCSection id="onboarding" title="Onboarding" subtitle="First-run variants">
+//       <DCArtboard id="a" label="A · Dusk" width={260} height={480}>…</DCArtboard>
+//       <DCArtboard id="b" label="B · Minimal" width={260} height={480}>…</DCArtboard>
+//     </DCSection>
+//   </DesignCanvas>
+
+const DC = {
+  bg: '#f0eee9',
+  grid: 'rgba(0,0,0,0.06)',
+  label: 'rgba(60,50,40,0.7)',
+  title: 'rgba(40,30,20,0.85)',
+  subtitle: 'rgba(60,50,40,0.6)',
+  postitBg: '#fef4a8',
+  postitText: '#5a4a2a',
+  font: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+};
+
+// One-time CSS injection (classes are dc-prefixed so they don't collide with
+// the hosted design's own styles).
+if (typeof document !== 'undefined' && !document.getElementById('dc-styles')) {
+  const s = document.createElement('style');
+  s.id = 'dc-styles';
+  s.textContent = [
+    '.dc-editable{cursor:text;outline:none;white-space:nowrap;border-radius:3px;padding:0 2px;margin:0 -2px}',
+    '.dc-editable:focus{background:#fff;box-shadow:0 0 0 1.5px #c96442}',
+    '[data-dc-slot]{transition:transform .18s cubic-bezier(.2,.7,.3,1)}',
+    '[data-dc-slot].dc-dragging{transition:none;z-index:10;pointer-events:none}',
+    '[data-dc-slot].dc-dragging .dc-card{box-shadow:0 12px 40px rgba(0,0,0,.25),0 0 0 2px #c96442;transform:scale(1.02)}',
+    // isolation:isolate contains artboard content's z-indexes so a
+    // z-indexed child (sticky navbar etc.) can't paint over .dc-header or
+    // the .dc-menu popover that drops into the top of the card.
+    '.dc-card{isolation:isolate;transition:box-shadow .15s,transform .15s}',
+    '.dc-card *{scrollbar-width:none}',
+    '.dc-card *::-webkit-scrollbar{display:none}',
+    // Per-artboard header: grip + label on the left, delete/expand on the
+    // right. Single flex row; when the artboard's on-screen width is too
+    // narrow for both the label yields (ellipsis, then hidden entirely below
+    // ~4ch via the container query) and the buttons stay on the row.
+    '.dc-header{position:absolute;bottom:100%;left:-4px;margin-bottom:calc(4px * var(--dc-inv-zoom,1));z-index:2;',
+    '  display:flex;align-items:center;container-type:inline-size}',
+    '.dc-labelrow{display:flex;align-items:center;gap:4px;height:24px;flex:1 1 auto;min-width:0}',
+    '.dc-grip{flex:0 0 auto;cursor:grab;display:flex;align-items:center;padding:5px 4px;border-radius:4px;transition:background .12s,opacity .12s}',
+    '.dc-grip:hover{background:rgba(0,0,0,.08)}',
+    '.dc-grip:active{cursor:grabbing}',
+    '.dc-labeltext{flex:1 1 auto;min-width:0;cursor:pointer;border-radius:4px;padding:3px 6px;',
+    '  display:flex;align-items:center;transition:background .12s;overflow:hidden}',
+    // Below ~4ch of label room: hide the label entirely, and drop the grip to
+    // hover-only (same reveal rule as .dc-btns) so a narrow header is clean
+    // until the card is moused.
+    '@container (max-width: 110px){',
+    '  .dc-labeltext{display:none}',
+    '  .dc-grip{opacity:0}',
+    '  [data-dc-slot]:hover .dc-grip{opacity:1}',
+    '}',
+    '.dc-labeltext:hover{background:rgba(0,0,0,.05)}',
+    '.dc-labeltext .dc-editable{overflow:hidden;text-overflow:ellipsis;max-width:100%}',
+    '.dc-labeltext .dc-editable:focus{overflow:visible;text-overflow:clip}',
+    '.dc-btns{flex:0 0 auto;margin-left:auto;display:flex;gap:2px;opacity:0;transition:opacity .12s}',
+    '[data-dc-slot]:hover .dc-btns,.dc-btns:has(.dc-menu){opacity:1}',
+    '.dc-expand,.dc-kebab{width:22px;height:22px;border-radius:5px;border:none;cursor:pointer;padding:0;',
+    '  background:transparent;color:rgba(60,50,40,.7);display:flex;align-items:center;justify-content:center;',
+    '  font:inherit;transition:background .12s,color .12s}',
+    '.dc-expand:hover,.dc-kebab:hover{background:rgba(0,0,0,.06);color:#2a251f}',
+    // Slot hosting an open menu floats above later siblings (which otherwise
+    // paint on top — same z-index:auto, later DOM order) so the popup isn't
+    // clipped by the next card.
+    '[data-dc-slot]:has(.dc-menu){z-index:10}',
+    '.dc-menu{position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border-radius:8px;',
+    '  box-shadow:0 8px 28px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.05);padding:4px;min-width:160px;z-index:10}',
+    '.dc-menu button{display:block;width:100%;padding:7px 10px;border:0;background:transparent;',
+    '  border-radius:5px;font-family:inherit;font-size:13px;font-weight:500;line-height:1.2;',
+    '  color:#29261b;cursor:pointer;text-align:left;transition:background .12s;white-space:nowrap}',
+    '.dc-menu button:hover{background:rgba(0,0,0,.05)}',
+    '.dc-menu hr{border:0;border-top:1px solid rgba(0,0,0,.08);margin:4px 2px}',
+    '.dc-menu .dc-danger{color:#c96442}',
+    '.dc-menu .dc-danger:hover{background:rgba(201,100,66,.1)}',
+    // Chrome (titles / labels / buttons) counter-scales against the viewport
+    // zoom so it stays a constant on-screen size. --dc-inv-zoom is set by
+    // DCViewport on every transform update and inherits to all descendants —
+    // any overlay inside the world (e.g. a TweaksPanel on an artboard) can use
+    // it the same way.
+    //
+    // The header uses transform:scale (out-of-flow, so layout impact doesn't
+    // matter) with its world-space width set to card-width / inv-zoom so that
+    // after counter-scaling its on-screen width exactly matches the card's —
+    // that's what lets the container query + text-overflow behave against the
+    // card's visible edge at every zoom level.
+    //
+    // The section head uses CSS zoom instead of transform so its layout box
+    // grows with the counter-scale, pushing the card row down — otherwise the
+    // constant-screen-size title would overflow into the (shrinking) world-
+    // space gap and overlap the artboard headers at low zoom.
+    '.dc-header{width:calc((100% + 4px) / var(--dc-inv-zoom,1));',
+    '  transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom left}',
+    '.dc-sectionhead{zoom:var(--dc-inv-zoom,1)}',
+  ].join('\n');
+  document.head.appendChild(s);
+}
+
+const DCCtx = React.createContext(null);
+
+// Recursively unwrap React.Fragment so <>…</> grouping doesn't hide
+// DCSection/DCArtboard children from the type-based walks below.
+function dcFlatten(children) {
+  const out = [];
+  React.Children.forEach(children, (c) => {
+    if (c && c.type === React.Fragment) out.push(...dcFlatten(c.props.children));
+    else out.push(c);
+  });
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────
+// DesignCanvas — stateful wrapper around the pan/zoom viewport.
+// Owns runtime state (per-section order, renamed titles/labels, hidden
+// artboards, focused artboard). Order/titles/labels/hidden persist to a
+// .design-canvas.state.json
+// sidecar next to the HTML. Reads go via plain fetch() so the saved
+// arrangement is visible anywhere the HTML + sidecar are served together
+// (omelette preview, direct link, downloaded zip). Writes go through the
+// host's window.omelette bridge — editing requires the omelette runtime.
+// Focus is ephemeral.
+// ─────────────────────────────────────────────────────────────
+const DC_STATE_FILE = '.design-canvas.state.json';
+
+function DesignCanvas({ children, minScale, maxScale, style }) {
+  const [state, setState] = React.useState({ sections: {}, focus: null });
+  // Hold rendering until the sidecar read settles so the saved order/titles
+  // appear on first paint (no source-order flash). didRead gates writes until
+  // the read settles so the empty initial state can't clobber a slow read;
+  // skipNextWrite suppresses the one echo-write that would otherwise follow
+  // hydration.
+  const [ready, setReady] = React.useState(false);
+  const didRead = React.useRef(false);
+  const skipNextWrite = React.useRef(false);
+
+  React.useEffect(() => {
+    let off = false;
+    fetch('./' + DC_STATE_FILE)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((saved) => {
+        if (off || !saved || !saved.sections) return;
+        skipNextWrite.current = true;
+        setState((s) => ({ ...s, sections: saved.sections }));
+      })
+      .catch(() => {})
+      .finally(() => { didRead.current = true; if (!off) setReady(true); });
+    const t = setTimeout(() => { if (!off) setReady(true); }, 150);
+    return () => { off = true; clearTimeout(t); };
+  }, []);
+
+  React.useEffect(() => {
+    if (!didRead.current) return;
+    if (skipNextWrite.current) { skipNextWrite.current = false; return; }
+    const t = setTimeout(() => {
+      window.omelette?.writeFile(DC_STATE_FILE, JSON.stringify({ sections: state.sections })).catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [state.sections]);
+
+  // Build registries synchronously from children so FocusOverlay can read
+  // them in the same render. Fragments are flattened; wrapping in other
+  // elements still opts out of focus/reorder.
+  const registry = {};     // slotId -> { sectionId, artboard }
+  const sectionMeta = {};  // sectionId -> { title, subtitle, slotIds[] }
+  const sectionOrder = [];
+  dcFlatten(children).forEach((sec) => {
+    if (!sec || sec.type !== DCSection) return;
+    const sid = sec.props.id ?? sec.props.title;
+    if (!sid) return;
+    sectionOrder.push(sid);
+    const persisted = state.sections[sid] || {};
+    const abs = [];
+    dcFlatten(sec.props.children).forEach((ab) => {
+      if (!ab || ab.type !== DCArtboard) return;
+      const aid = ab.props.id ?? ab.props.label;
+      if (aid) abs.push([aid, ab]);
+    });
+    // hidden is scoped to one source revision — when the agent regenerates
+    // (artboard-ID set changes), prior deletes don't apply to new content.
+    const srcKey = abs.map(([k]) => k).join('\x1f');
+    const hidden = persisted.srcKey === srcKey ? (persisted.hidden || []) : [];
+    const srcIds = [];
+    abs.forEach(([aid, ab]) => {
+      if (hidden.includes(aid)) return;
+      registry[`${sid}/${aid}`] = { sectionId: sid, artboard: ab };
+      srcIds.push(aid);
+    });
+    const kept = (persisted.order || []).filter((k) => srcIds.includes(k));
+    sectionMeta[sid] = {
+      title: persisted.title ?? sec.props.title,
+      subtitle: sec.props.subtitle,
+      slotIds: [...kept, ...srcIds.filter((k) => !kept.includes(k))],
+    };
+  });
+
+  const api = React.useMemo(() => ({
+    state,
+    section: (id) => state.sections[id] || {},
+    patchSection: (id, p) => setState((s) => ({
+      ...s,
+      sections: { ...s.sections, [id]: { ...s.sections[id], ...(typeof p === 'function' ? p(s.sections[id] || {}) : p) } },
+    })),
+    setFocus: (slotId) => setState((s) => ({ ...s, focus: slotId })),
+  }), [state]);
+
+  // Esc exits focus; any outside pointerdown commits an in-progress rename.
+  React.useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') api.setFocus(null); };
+    const onPd = (e) => {
+      const ae = document.activeElement;
+      if (ae && ae.isContentEditable && !ae.contains(e.target)) ae.blur();
+    };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', onPd, true);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('pointerdown', onPd, true);
+    };
+  }, [api]);
+
+  return (
+    <DCCtx.Provider value={api}>
+      <DCViewport minScale={minScale} maxScale={maxScale} style={style}>{ready && children}</DCViewport>
+      {state.focus && registry[state.focus] && (
+        <DCFocusOverlay entry={registry[state.focus]} sectionMeta={sectionMeta} sectionOrder={sectionOrder} />
+      )}
+    </DCCtx.Provider>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// DCViewport — transform-based pan/zoom (internal)
+//
+// Input mapping (Figma-style):
+//   • trackpad pinch  → zoom   (ctrlKey wheel; Safari gesture* events)
+//   • trackpad scroll → pan    (two-finger)
+//   • mouse wheel     → zoom   (notched; distinguished from trackpad scroll)
+//   • middle-drag / primary-drag-on-bg → pan
+//
+// Transform state lives in a ref and is written straight to the DOM
+// (translate3d + will-change) so wheel ticks don't go through React —
+// keeps pans at 60fps on dense canvases.
+// ─────────────────────────────────────────────────────────────
+function DCViewport({ children, minScale = 0.1, maxScale = 8, style = {} }) {
+  const vpRef = React.useRef(null);
+  const worldRef = React.useRef(null);
+  const tf = React.useRef({ x: 0, y: 0, scale: 1 });
+  // Persist viewport across reloads so the user lands back where they were
+  // after an agent edit or browser refresh. The sandbox origin is already
+  // per-project; pathname keeps multiple canvas files in one project apart.
+  const tfKey = 'dc-viewport:' + location.pathname;
+  const saveT = React.useRef(0);
+
+  const lastPostedScale = React.useRef();
+  const apply = React.useCallback(() => {
+    const { x, y, scale } = tf.current;
+    const el = worldRef.current;
+    if (!el) return;
+    el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+    // Exposed for zoom-invariant chrome (labels, buttons, TweaksPanel).
+    el.style.setProperty('--dc-inv-zoom', String(1 / scale));
+    // Keep the host toolbar's % readout in sync with the canvas scale. Pan
+    // ticks leave scale unchanged — skip the cross-frame post for those.
+    if (lastPostedScale.current !== scale) {
+      lastPostedScale.current = scale;
+      window.parent.postMessage({ type: '__dc_zoom', scale }, '*');
+    }
+    clearTimeout(saveT.current);
+    saveT.current = setTimeout(() => {
+      try { localStorage.setItem(tfKey, JSON.stringify(tf.current)); } catch {}
+    }, 200);
+  }, [tfKey]);
+
+  React.useLayoutEffect(() => {
+    const flush = () => {
+      clearTimeout(saveT.current);
+      try { localStorage.setItem(tfKey, JSON.stringify(tf.current)); } catch {}
+    };
+    try {
+      const s = JSON.parse(localStorage.getItem(tfKey) || 'null');
+      if (s && Number.isFinite(s.x) && Number.isFinite(s.y) && Number.isFinite(s.scale)) {
+        tf.current = { x: s.x, y: s.y, scale: Math.min(maxScale, Math.max(minScale, s.scale)) };
+        apply();
+      }
+    } catch {}
+    // Flush on pagehide and unmount so a reload within the 200ms debounce
+    // window doesn't drop the last pan/zoom.
+    window.addEventListener('pagehide', flush);
+    return () => { window.removeEventListener('pagehide', flush); flush(); };
+  }, []);
+
+  React.useEffect(() => {
+    const vp = vpRef.current;
+    if (!vp) return;
+
+    const zoomAt = (cx, cy, factor) => {
+      const r = vp.getBoundingClientRect();
+      const px = cx - r.left, py = cy - r.top;
+      const t = tf.current;
+      const next = Math.min(maxScale, Math.max(minScale, t.scale * factor));
+      const k = next / t.scale;
+      // --dc-inv-zoom consumers (.dc-sectionhead's CSS zoom, each section's
+      // marginBottom) reflow on every scale change, vertically shifting the
+      // world layout — so a world point mathematically pinned under the cursor
+      // drifts as you zoom (content creeps up on zoom-in, down on zoom-out).
+      // Anchor the DOM element under the cursor instead: record its screen Y,
+      // apply the transform + --dc-inv-zoom, then cancel whatever vertical
+      // drift the reflow introduced so it stays put on screen.
+      let marker = null, markerY0 = 0;
+      if (k !== 1) {
+        const hit = document.elementFromPoint(cx, cy);
+        marker = hit && hit.closest ? hit.closest('[data-dc-slot],[data-dc-section]') : null;
+        if (marker) markerY0 = marker.getBoundingClientRect().top;
+      }
+      // keep the world point under the cursor fixed
+      t.x = px - (px - t.x) * k;
+      t.y = py - (py - t.y) * k;
+      t.scale = next;
+      apply();
+      if (marker) {
+        // A pure zoom around (cx, cy) maps screen Y → cy + (Y - cy) * k. Any
+        // departure after the --dc-inv-zoom reflow is the layout drift.
+        const drift = marker.getBoundingClientRect().top - (cy + (markerY0 - cy) * k);
+        if (Math.abs(drift) > 0.1) { t.y -= drift; apply(); }
+      }
+    };
+
+    // Mouse-wheel vs trackpad-scroll heuristic. A physical wheel sends
+    // line-mode deltas (Firefox) or large integer pixel deltas with no X
+    // component (Chrome/Safari, typically multiples of 100/120). Trackpad
+    // two-finger scroll sends small/fractional pixel deltas, often with
+    // non-zero deltaX. ctrlKey is set by the browser for trackpad pinch.
+    const isMouseWheel = (e) =>
+      e.deltaMode !== 0 ||
+      (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 40);
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      if (isGesturing) return; // Safari: gesture* owns the pinch — discard concurrent wheels
+      if ((e.ctrlKey || e.metaKey) && !isMouseWheel(e)) {
+        // trackpad pinch, or ctrl/cmd + smooth-scroll mouse. Notched
+        // wheels fall through to the fixed-step branch below.
+        zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01));
+      } else if (isMouseWheel(e)) {
+        // notched mouse wheel — fixed-ratio step per click
+        zoomAt(e.clientX, e.clientY, Math.exp(-Math.sign(e.deltaY) * 0.18));
+      } else {
+        // trackpad two-finger scroll — pan
+        tf.current.x -= e.deltaX;
+        tf.current.y -= e.deltaY;
+        apply();
+      }
+    };
+
+    // Safari sends native gesture* events for trackpad pinch with a smooth
+    // e.scale; preferring these over the ctrl+wheel fallback gives a much
+    // better feel there. No-ops on other browsers. Safari also fires
+    // ctrlKey wheel events during the same pinch — isGesturing makes
+    // onWheel drop those entirely so they neither zoom nor pan.
+    let gsBase = 1;
+    let isGesturing = false;
+    const onGestureStart = (e) => { e.preventDefault(); isGesturing = true; gsBase = tf.current.scale; };
+    const onGestureChange = (e) => {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, (gsBase * e.scale) / tf.current.scale);
+    };
+    const onGestureEnd = (e) => { e.preventDefault(); isGesturing = false; };
+
+    // Drag-pan: middle button anywhere, or primary button on canvas
+    // background (anything that isn't an artboard or an inline editor).
+    let drag = null;
+    const onPointerDown = (e) => {
+      const onBg = !e.target.closest('[data-dc-slot], .dc-editable');
+      if (!(e.button === 1 || (e.button === 0 && onBg))) return;
+      e.preventDefault();
+      vp.setPointerCapture(e.pointerId);
+      drag = { id: e.pointerId, lx: e.clientX, ly: e.clientY };
+      vp.style.cursor = 'grabbing';
+    };
+    const onPointerMove = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      tf.current.x += e.clientX - drag.lx;
+      tf.current.y += e.clientY - drag.ly;
+      drag.lx = e.clientX; drag.ly = e.clientY;
+      apply();
+    };
+    const onPointerUp = (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      vp.releasePointerCapture(e.pointerId);
+      drag = null;
+      vp.style.cursor = '';
+    };
+
+    // Host-driven zoom (toolbar % menu). Zooms around viewport centre so the
+    // visible midpoint stays fixed — matching the host's iframe-zoom feel.
+    const onHostMsg = (e) => {
+      const d = e.data;
+      if (d && d.type === '__dc_set_zoom' && typeof d.scale === 'number') {
+        const r = vp.getBoundingClientRect();
+        zoomAt(r.left + r.width / 2, r.top + r.height / 2, d.scale / tf.current.scale);
+      } else if (d && d.type === '__dc_probe') {
+        // Host's [readyGen] reset asks whether a canvas is present; it
+        // fires on the iframe's native 'load', which for canvases with
+        // images/fonts is after our mount-time announce, so re-announce.
+        // Clear the pan-tick guard so apply() re-posts the current scale
+        // even if it's unchanged — the host just reset dcScale to 1.
+        window.parent.postMessage({ type: '__dc_present' }, '*');
+        lastPostedScale.current = undefined;
+        apply();
+      }
+    };
+    window.addEventListener('message', onHostMsg);
+    // Announce canvas mode so the host toolbar proxies its % control here
+    // instead of scaling the iframe element (which would just shrink the
+    // viewport window of an infinite canvas). The apply() that follows emits
+    // the initial __dc_zoom so the toolbar % is correct before first pinch.
+    // lastPostedScale reset mirrors the __dc_probe handler: the layout
+    // effect's restore-path apply() may already have posted the restored
+    // scale (before __dc_present), so clear the guard to re-post it in order.
+    window.parent.postMessage({ type: '__dc_present' }, '*');
+    lastPostedScale.current = undefined;
+    apply();
+
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    vp.addEventListener('gesturestart', onGestureStart, { passive: false });
+    vp.addEventListener('gesturechange', onGestureChange, { passive: false });
+    vp.addEventListener('gestureend', onGestureEnd, { passive: false });
+    vp.addEventListener('pointerdown', onPointerDown);
+    vp.addEventListener('pointermove', onPointerMove);
+    vp.addEventListener('pointerup', onPointerUp);
+    vp.addEventListener('pointercancel', onPointerUp);
+    return () => {
+      window.removeEventListener('message', onHostMsg);
+      vp.removeEventListener('wheel', onWheel);
+      vp.removeEventListener('gesturestart', onGestureStart);
+      vp.removeEventListener('gesturechange', onGestureChange);
+      vp.removeEventListener('gestureend', onGestureEnd);
+      vp.removeEventListener('pointerdown', onPointerDown);
+      vp.removeEventListener('pointermove', onPointerMove);
+      vp.removeEventListener('pointerup', onPointerUp);
+      vp.removeEventListener('pointercancel', onPointerUp);
+    };
+  }, [apply, minScale, maxScale]);
+
+  const gridSvg = `url("data:image/svg+xml,%3Csvg width='120' height='120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M120 0H0v120' fill='none' stroke='${encodeURIComponent(DC.grid)}' stroke-width='1'/%3E%3C/svg%3E")`;
+  return (
+    <div
+      ref={vpRef}
+      className="design-canvas"
+      style={{
+        height: '100vh', width: '100vw',
+        background: DC.bg,
+        overflow: 'hidden',
+        overscrollBehavior: 'none',
+        touchAction: 'none',
+        position: 'relative',
+        fontFamily: DC.font,
+        boxSizing: 'border-box',
+        ...style,
+      }}
+    >
+      <div
+        ref={worldRef}
+        style={{
+          position: 'absolute', top: 0, left: 0,
+          transformOrigin: '0 0',
+          willChange: 'transform',
+          width: 'max-content', minWidth: '100%',
+          minHeight: '100%',
+          padding: '60px 0 80px',
+        }}
+      >
+        <div style={{ position: 'absolute', inset: -6000, backgroundImage: gridSvg, backgroundSize: '120px 120px', pointerEvents: 'none', zIndex: -1 }} />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// DCSection — editable title + h-row of artboards in persisted order
+// ─────────────────────────────────────────────────────────────
+function DCSection({ id, title, subtitle, children, gap = 48 }) {
+  const ctx = React.useContext(DCCtx);
+  const sid = id ?? title;
+  const all = React.Children.toArray(dcFlatten(children));
+  const artboards = all.filter((c) => c && c.type === DCArtboard);
+  const rest = all.filter((c) => !(c && c.type === DCArtboard));
+  const sec = (ctx && sid && ctx.section(sid)) || {};
+  // Must match DesignCanvas's srcKey computation exactly (it filters falsy
+  // IDs), or onDelete persists a srcKey that DesignCanvas never recognizes.
+  const allIds = artboards.map((a) => a.props.id ?? a.props.label).filter(Boolean);
+  const srcKey = allIds.join('\x1f');
+  const hidden = sec.srcKey === srcKey ? (sec.hidden || []) : [];
+  const srcOrder = allIds.filter((k) => !hidden.includes(k));
+
+  const order = React.useMemo(() => {
+    const kept = (sec.order || []).filter((k) => srcOrder.includes(k));
+    return [...kept, ...srcOrder.filter((k) => !kept.includes(k))];
+  }, [sec.order, srcOrder.join('|')]);
+
+  const byId = Object.fromEntries(artboards.map((a) => [a.props.id ?? a.props.label, a]));
+
+  // marginBottom counter-scales so the on-screen gap between sections stays
+  // constant — otherwise at low zoom the (world-space) gap collapses while
+  // the screen-constant sectionhead below it doesn't, and the title reads as
+  // belonging to the section above. paddingBottom below is just enough for
+  // the 24px artboard-header (abs-positioned above each card) plus ~8px, so
+  // the title sits tight against its own row at every zoom.
+  return (
+    <div data-dc-section={sid}
+      style={{ marginBottom: 'calc(80px * var(--dc-inv-zoom, 1))', position: 'relative' }}>
+      <div style={{ padding: '0 60px' }}>
+        <div className="dc-sectionhead" style={{ paddingBottom: 36 }}>
+          <DCEditable tag="div" value={sec.title ?? title}
+            onChange={(v) => ctx && sid && ctx.patchSection(sid, { title: v })}
+            style={{ fontSize: 28, fontWeight: 600, color: DC.title, letterSpacing: -0.4, marginBottom: 6, display: 'inline-block' }} />
+          {subtitle && <div style={{ fontSize: 16, color: DC.subtitle }}>{subtitle}</div>}
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap, padding: '0 60px', alignItems: 'flex-start', width: 'max-content' }}>
+        {order.map((k) => (
+          <DCArtboardFrame key={k} sectionId={sid} artboard={byId[k]} order={order}
+            label={(sec.labels || {})[k] ?? byId[k].props.label}
+            onRename={(v) => ctx && ctx.patchSection(sid, (x) => ({ labels: { ...x.labels, [k]: v } }))}
+            onReorder={(next) => ctx && ctx.patchSection(sid, { order: next })}
+            onDelete={() => ctx && ctx.patchSection(sid, (x) => ({
+              hidden: [...(x.srcKey === srcKey ? (x.hidden || []) : []), k],
+              srcKey,
+            }))}
+            onFocus={() => ctx && ctx.setFocus(`${sid}/${k}`)} />
+        ))}
+      </div>
+      {rest}
+    </div>
+  );
+}
+
+// DCArtboard — marker; rendered by DCArtboardFrame via DCSection.
+function DCArtboard() { return null; }
+
+// Per-artboard export (kind: 'png' | 'html'). Both paths share the same
+// self-contained clone: computed styles baked in, @font-face / <img> /
+// inline-style background-image urls inlined as data URIs. PNG wraps the
+// clone in foreignObject→canvas at 3× the artboard's natural width×height
+// (same pipeline the host uses for page captures); HTML wraps it in a
+// minimal standalone document. Both are independent of viewport zoom.
+async function dcExport(node, w, h, name, kind) {
+  try { await document.fonts.ready; } catch {}
+  const toDataURL = (url) => fetch(url).then((r) => r.blob()).then((b) => new Promise((res) => {
+    const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => res(url); fr.readAsDataURL(b);
+  })).catch(() => url);
+
+  // Collect @font-face rules. ss.cssRules throws SecurityError on
+  // cross-origin sheets (e.g. fonts.googleapis.com) — in that case fetch
+  // the CSS text directly (those endpoints send ACAO:*) and regex-extract
+  // the blocks. @import and @media/@supports are walked so nested
+  // @font-face rules aren't missed.
+  const fontRules = [], pending = [], seen = new Set();
+  const scrapeCss = (href) => {
+    if (seen.has(href)) return; seen.add(href);
+    pending.push(fetch(href).then((r) => r.text()).then((css) => {
+      for (const m of css.match(/@font-face\s*{[^}]*}/g) || []) fontRules.push({ css: m, base: href });
+      for (const m of css.matchAll(/@import\s+(?:url\()?['"]?([^'")\s;]+)/g))
+        scrapeCss(new URL(m[1], href).href);
+    }).catch(() => {}));
+  };
+  const walk = (rules, base) => {
+    for (const r of rules) {
+      if (r.type === CSSRule.FONT_FACE_RULE) fontRules.push({ css: r.cssText, base });
+      else if (r.type === CSSRule.IMPORT_RULE && r.styleSheet) {
+        const ibase = r.styleSheet.href || base;
+        try { walk(r.styleSheet.cssRules, ibase); } catch { scrapeCss(ibase); }
+      } else if (r.cssRules) walk(r.cssRules, base);
+    }
+  };
+  for (const ss of document.styleSheets) {
+    const base = ss.href || location.href;
+    try { walk(ss.cssRules, base); } catch { if (ss.href) scrapeCss(ss.href); }
+  }
+  while (pending.length) await pending.shift();
+  const fontCss = (await Promise.all(fontRules.map(async (rule) => {
+    let out = rule.css, m; const re = /url\((['"]?)([^'")]+)\1\)/g;
+    while ((m = re.exec(rule.css))) {
+      if (m[2].indexOf('data:') === 0) continue;
+      let abs; try { abs = new URL(m[2], rule.base).href; } catch { continue; }
+      out = out.split(m[0]).join('url("' + await toDataURL(abs) + '")');
+    }
+    return out;
+  }))).join('\n');
+
+  const cloneStyled = (src) => {
+    if (src.nodeType === 8 || (src.nodeType === 1 && src.tagName === 'SCRIPT')) return document.createTextNode('');
+    const dst = src.cloneNode(false);
+    if (src.nodeType === 1) {
+      const cs = getComputedStyle(src); let txt = '';
+      for (let i = 0; i < cs.length; i++) txt += cs[i] + ':' + cs.getPropertyValue(cs[i]) + ';';
+      dst.setAttribute('style', txt + 'animation:none;transition:none;');
+      if (src.tagName === 'CANVAS') try { const im = document.createElement('img'); im.src = src.toDataURL(); im.setAttribute('style', txt); return im; } catch {}
+    }
+    for (let c = src.firstChild; c; c = c.nextSibling) dst.appendChild(cloneStyled(c));
+    return dst;
+  };
+  const clone = cloneStyled(node);
+  clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  // Drop the card's own shadow/radius so the export is a flush w×h rect;
+  // the artboard's own background (if any) is already in the computed style.
+  clone.style.boxShadow = 'none'; clone.style.borderRadius = '0';
+
+  const jobs = [];
+  clone.querySelectorAll('img').forEach((el) => {
+    const s = el.getAttribute('src');
+    if (s && s.indexOf('data:') !== 0) jobs.push(toDataURL(el.src).then((d) => el.setAttribute('src', d)));
+  });
+  [clone, ...clone.querySelectorAll('*')].forEach((el) => {
+    const bg = el.style.backgroundImage; if (!bg) return;
+    let m; const re = /url\(["']?([^"')]+)["']?\)/g;
+    while ((m = re.exec(bg))) {
+      const tok = m[0], url = m[1];
+      if (url.indexOf('data:') === 0) continue;
+      jobs.push(toDataURL(url).then((d) => { el.style.backgroundImage = el.style.backgroundImage.split(tok).join('url("' + d + '")'); }));
+    }
+  });
+  await Promise.all(jobs);
+
+  const xml = new XMLSerializer().serializeToString(clone);
+  const save = (blob, ext) => {
+    if (!blob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name + '.' + ext; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+
+  if (kind === 'html') {
+    const html = '<!doctype html><html><head><meta charset="utf-8"><title>' + name + '</title>' +
+      (fontCss ? '<style>' + fontCss + '</style>' : '') +
+      '</head><body style="margin:0">' + xml + '</body></html>';
+    return save(new Blob([html], { type: 'text/html' }), 'html');
+  }
+
+  // PNG: the SVG's own width/height must be the output resolution — an
+  // <img>-loaded SVG rasterizes at its intrinsic size, so sizing it at 1×
+  // and ctx.scale()-ing up would just upscale a 1× bitmap. viewBox maps the
+  // w×h foreignObject onto the px·w × px·h SVG canvas so the browser renders
+  // the HTML at full resolution.
+  const px = 3;
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w * px + '" height="' + h * px +
+    '" viewBox="0 0 ' + w + ' ' + h + '"><foreignObject width="' + w + '" height="' + h + '">' +
+    (fontCss ? '<style><![CDATA[' + fontCss + ']]></style>' : '') + xml + '</foreignObject></svg>';
+  const img = new Image();
+  await new Promise((res, rej) => {
+    img.onload = res; img.onerror = () => rej(new Error('svg load failed'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+  const cv = document.createElement('canvas');
+  cv.width = w * px; cv.height = h * px;
+  cv.getContext('2d').drawImage(img, 0, 0);
+  cv.toBlob((blob) => save(blob, 'png'), 'image/png');
+}
+
+function DCArtboardFrame({ sectionId, artboard, label, order, onRename, onReorder, onFocus, onDelete }) {
+  const { id: rawId, label: rawLabel, width = 260, height = 480, children, style = {} } = artboard.props;
+  const id = rawId ?? rawLabel;
+  const ref = React.useRef(null);
+  const cardRef = React.useRef(null);
+  const menuRef = React.useRef(null);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [confirming, setConfirming] = React.useState(false);
+
+  // ⋯ menu: close on any outside pointerdown. Two-click delete lives inside
+  // the menu — first click arms the row, second commits; closing disarms.
+  React.useEffect(() => {
+    if (!menuOpen) { setConfirming(false); return; }
+    const off = (e) => { if (!menuRef.current || !menuRef.current.contains(e.target)) setMenuOpen(false); };
+    document.addEventListener('pointerdown', off, true);
+    return () => document.removeEventListener('pointerdown', off, true);
+  }, [menuOpen]);
+
+  const doExport = (kind) => {
+    setMenuOpen(false);
+    if (!cardRef.current) return;
+    const name = String(label || id || 'artboard').replace(/[^\w\s.-]+/g, '_');
+    dcExport(cardRef.current, width, height, name, kind)
+      .catch((e) => console.error('[design-canvas] export failed:', e));
+  };
+
+  // Live drag-reorder: dragged card sticks to cursor; siblings slide into
+  // their would-be slots in real time via transforms. DOM order only
+  // changes on drop.
+  const onGripDown = (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const me = ref.current;
+    // translateX is applied in local (pre-scale) space but pointer deltas and
+    // getBoundingClientRect().left are screen-space — divide by the viewport's
+    // current scale so the dragged card tracks the cursor at any zoom level.
+    const scale = me.getBoundingClientRect().width / me.offsetWidth || 1;
+    const peers = Array.from(document.querySelectorAll(`[data-dc-section="${sectionId}"] [data-dc-slot]`));
+    const homes = peers.map((el) => ({ el, id: el.dataset.dcSlot, x: el.getBoundingClientRect().left }));
+    const slotXs = homes.map((h) => h.x);
+    const startIdx = order.indexOf(id);
+    const startX = e.clientX;
+    let liveOrder = order.slice();
+    me.classList.add('dc-dragging');
+
+    const layout = () => {
+      for (const h of homes) {
+        if (h.id === id) continue;
+        const slot = liveOrder.indexOf(h.id);
+        h.el.style.transform = `translateX(${(slotXs[slot] - h.x) / scale}px)`;
+      }
+    };
+
+    const move = (ev) => {
+      const dx = ev.clientX - startX;
+      me.style.transform = `translateX(${dx / scale}px)`;
+      const cur = homes[startIdx].x + dx;
+      let nearest = 0, best = Infinity;
+      for (let i = 0; i < slotXs.length; i++) {
+        const d = Math.abs(slotXs[i] - cur);
+        if (d < best) { best = d; nearest = i; }
+      }
+      if (liveOrder.indexOf(id) !== nearest) {
+        liveOrder = order.filter((k) => k !== id);
+        liveOrder.splice(nearest, 0, id);
+        layout();
+      }
+    };
+
+    const up = () => {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', up);
+      const finalSlot = liveOrder.indexOf(id);
+      me.classList.remove('dc-dragging');
+      me.style.transform = `translateX(${(slotXs[finalSlot] - homes[startIdx].x) / scale}px)`;
+      // After the settle transition, kill transitions + clear transforms +
+      // commit the reorder in the same frame so there's no visual snap-back.
+      setTimeout(() => {
+        for (const h of homes) { h.el.style.transition = 'none'; h.el.style.transform = ''; }
+        if (liveOrder.join('|') !== order.join('|')) onReorder(liveOrder);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          for (const h of homes) h.el.style.transition = '';
+        }));
+      }, 180);
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+  };
+
+  return (
+    <div ref={ref} data-dc-slot={id} style={{ position: 'relative', flexShrink: 0 }}>
+      <div className="dc-header" data-noncommentable="" style={{ color: DC.label }} onPointerDown={(e) => e.stopPropagation()}>
+        <div className="dc-labelrow">
+          <div className="dc-grip" onPointerDown={onGripDown} title="Drag to reorder">
+            <svg width="9" height="13" viewBox="0 0 9 13" fill="currentColor"><circle cx="2" cy="2" r="1.1"/><circle cx="7" cy="2" r="1.1"/><circle cx="2" cy="6.5" r="1.1"/><circle cx="7" cy="6.5" r="1.1"/><circle cx="2" cy="11" r="1.1"/><circle cx="7" cy="11" r="1.1"/></svg>
+          </div>
+          <div className="dc-labeltext" onClick={onFocus} title="Click to focus">
+            <DCEditable value={label} onChange={onRename} onClick={(e) => e.stopPropagation()}
+              style={{ fontSize: 15, fontWeight: 500, color: DC.label, lineHeight: 1 }} />
+          </div>
+        </div>
+        <div className="dc-btns">
+          <div ref={menuRef} style={{ position: 'relative' }}>
+            <button className="dc-kebab" title="More" onClick={() => setMenuOpen((o) => !o)}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><circle cx="2.5" cy="6" r="1.1"/><circle cx="6" cy="6" r="1.1"/><circle cx="9.5" cy="6" r="1.1"/></svg>
+            </button>
+            {menuOpen && (
+              <div className="dc-menu" onPointerDown={(e) => e.stopPropagation()}>
+                <button onClick={() => doExport('png')}>Download PNG</button>
+                <button onClick={() => doExport('html')}>Download HTML</button>
+                <hr />
+                <button className="dc-danger"
+                  onClick={() => { if (confirming) { setMenuOpen(false); onDelete(); } else setConfirming(true); }}>
+                  {confirming ? 'Click again to delete' : 'Delete'}
+                </button>
+              </div>
+            )}
+          </div>
+          <button className="dc-expand" onClick={onFocus} title="Focus">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M7 1h4v4M5 11H1V7M11 1L7.5 4.5M1 11l3.5-3.5"/></svg>
+          </button>
+        </div>
+      </div>
+      <div ref={cardRef} className="dc-card"
+        style={{ borderRadius: 2, boxShadow: '0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06)', overflow: 'hidden', width, height, background: '#fff', ...style }}>
+        {children || <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: 13, fontFamily: DC.font }}>{id}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Inline rename — commits on blur or Enter.
+function DCEditable({ value, onChange, style, tag = 'span', onClick }) {
+  const T = tag;
+  return (
+    <T className="dc-editable" contentEditable suppressContentEditableWarning
+      onClick={onClick}
+      onPointerDown={(e) => e.stopPropagation()}
+      onBlur={(e) => onChange && onChange(e.currentTarget.textContent)}
+      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur(); } }}
+      style={style}>{value}</T>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Focus mode — overlay one artboard; ←/→ within section, ↑/↓ across
+// sections, Esc or backdrop click to exit.
+// ─────────────────────────────────────────────────────────────
+function DCFocusOverlay({ entry, sectionMeta, sectionOrder }) {
+  const ctx = React.useContext(DCCtx);
+  const { sectionId, artboard } = entry;
+  const sec = ctx.section(sectionId);
+  const meta = sectionMeta[sectionId];
+  const peers = meta.slotIds;
+  const aid = artboard.props.id ?? artboard.props.label;
+  const idx = peers.indexOf(aid);
+  const secIdx = sectionOrder.indexOf(sectionId);
+
+  const go = (d) => { const n = peers[(idx + d + peers.length) % peers.length]; if (n) ctx.setFocus(`${sectionId}/${n}`); };
+  const goSection = (d) => {
+    // Sections whose artboards are all deleted have slotIds:[] — step past
+    // them to the next non-empty section so ↑/↓ doesn't dead-end.
+    const n = sectionOrder.length;
+    for (let i = 1; i < n; i++) {
+      const ns = sectionOrder[(((secIdx + d * i) % n) + n) % n];
+      const first = sectionMeta[ns] && sectionMeta[ns].slotIds[0];
+      if (first) { ctx.setFocus(`${ns}/${first}`); return; }
+    }
+  };
+
+  React.useEffect(() => {
+    const k = (e) => {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(1); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); goSection(-1); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); goSection(1); }
+    };
+    document.addEventListener('keydown', k);
+    return () => document.removeEventListener('keydown', k);
+  });
+
+  const { width = 260, height = 480, children } = artboard.props;
+  const [vp, setVp] = React.useState({ w: window.innerWidth, h: window.innerHeight });
+  React.useEffect(() => { const r = () => setVp({ w: window.innerWidth, h: window.innerHeight }); window.addEventListener('resize', r); return () => window.removeEventListener('resize', r); }, []);
+  const scale = Math.max(0.1, Math.min((vp.w - 200) / width, (vp.h - 260) / height, 2));
+
+  const [ddOpen, setDd] = React.useState(false);
+  const Arrow = ({ dir, onClick }) => (
+    <button onClick={(e) => { e.stopPropagation(); onClick(); }}
+      style={{ position: 'absolute', top: '50%', [dir]: 28, transform: 'translateY(-50%)',
+        border: 'none', background: 'rgba(255,255,255,.08)', color: 'rgba(255,255,255,.9)',
+        width: 44, height: 44, borderRadius: 22, fontSize: 18, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s' }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.18)')}
+      onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.08)')}>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d={dir === 'left' ? 'M11 3L5 9l6 6' : 'M7 3l6 6-6 6'} /></svg>
+    </button>
+  );
+
+  // Portal to body so position:fixed is the real viewport regardless of any
+  // transform on DesignCanvas's ancestors (including the canvas zoom itself).
+  return ReactDOM.createPortal(
+    <div onClick={() => ctx.setFocus(null)}
+      onWheel={(e) => e.preventDefault()}
+      style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(24,20,16,.6)', backdropFilter: 'blur(14px)',
+        fontFamily: DC.font, color: '#fff' }}>
+
+      {/* top bar: section dropdown (left) · close (right) */}
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 72, display: 'flex', alignItems: 'flex-start', padding: '16px 20px 0', gap: 16 }}>
+        <div style={{ position: 'relative' }}>
+          <button onClick={() => setDd((o) => !o)}
+            style={{ border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', padding: '6px 8px',
+              borderRadius: 6, textAlign: 'left', fontFamily: 'inherit' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18, fontWeight: 600, letterSpacing: -0.3 }}>{meta.title}</span>
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ opacity: .7 }}><path d="M2 4l3.5 3.5L9 4"/></svg>
+            </span>
+            {meta.subtitle && <span style={{ display: 'block', fontSize: 13, opacity: .6, fontWeight: 400, marginTop: 2 }}>{meta.subtitle}</span>}
+          </button>
+          {ddOpen && (
+            <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, background: '#2a251f', borderRadius: 8,
+              boxShadow: '0 8px 32px rgba(0,0,0,.4)', padding: 4, minWidth: 200, zIndex: 10 }}>
+              {sectionOrder.filter((sid) => sectionMeta[sid].slotIds.length).map((sid) => (
+                <button key={sid} onClick={() => { setDd(false); const f = sectionMeta[sid].slotIds[0]; if (f) ctx.setFocus(`${sid}/${f}`); }}
+                  style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', cursor: 'pointer',
+                    background: sid === sectionId ? 'rgba(255,255,255,.1)' : 'transparent', color: '#fff',
+                    padding: '8px 12px', borderRadius: 5, fontSize: 14, fontWeight: sid === sectionId ? 600 : 400, fontFamily: 'inherit' }}>
+                  {sectionMeta[sid].title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <div style={{ flex: 1 }} />
+        <button onClick={() => ctx.setFocus(null)}
+          onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.12)')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,.7)', width: 32, height: 32,
+            borderRadius: 16, fontSize: 20, cursor: 'pointer', lineHeight: 1, transition: 'background .12s' }}>×</button>
+      </div>
+
+      {/* card centered, label + index below — only the card itself stops
+          propagation so any backdrop click (including the margins around
+          the card) exits focus */}
+      <div
+        style={{ position: 'absolute', top: 64, bottom: 56, left: 100, right: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <div onClick={(e) => e.stopPropagation()} style={{ width: width * scale, height: height * scale, position: 'relative' }}>
+          <div style={{ width, height, transform: `scale(${scale})`, transformOrigin: 'top left', background: '#fff', borderRadius: 2, overflow: 'hidden',
+            boxShadow: '0 20px 80px rgba(0,0,0,.4)' }}>
+            {children || <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb' }}>{aid}</div>}
+          </div>
+        </div>
+        <div onClick={(e) => e.stopPropagation()} style={{ fontSize: 14, fontWeight: 500, opacity: .85, textAlign: 'center' }}>
+          {(sec.labels || {})[aid] ?? artboard.props.label}
+          <span style={{ opacity: .5, marginLeft: 10, fontVariantNumeric: 'tabular-nums' }}>{idx + 1} / {peers.length}</span>
+        </div>
+      </div>
+
+      <Arrow dir="left" onClick={() => go(-1)} />
+      <Arrow dir="right" onClick={() => go(1)} />
+
+      {/* dots */}
+      <div onClick={(e) => e.stopPropagation()}
+        style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 8 }}>
+        {peers.map((p, i) => (
+          <button key={p} onClick={() => ctx.setFocus(`${sectionId}/${p}`)}
+            style={{ border: 'none', padding: 0, cursor: 'pointer', width: 6, height: 6, borderRadius: 3,
+              background: i === idx ? '#fff' : 'rgba(255,255,255,.3)' }} />
+        ))}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Post-it — absolute-positioned sticky note
+// ─────────────────────────────────────────────────────────────
+function DCPostIt({ children, top, left, right, bottom, rotate = -2, width = 180 }) {
+  return (
+    <div style={{
+      position: 'absolute', top, left, right, bottom, width,
+      background: DC.postitBg, padding: '14px 16px',
+      fontFamily: '"Comic Sans MS", "Marker Felt", "Segoe Print", cursive',
+      fontSize: 14, lineHeight: 1.4, color: DC.postitText,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08)',
+      transform: `rotate(${rotate}deg)`,
+      zIndex: 5,
+    }}>{children}</div>
+  );
+}
+
+Object.assign(window, { DesignCanvas, DCSection, DCArtboard, DCPostIt });
+
+/* ─── shared atoms & data for AVIA cockpit ─────────────────────────── */
+/* global React */
+
+// ─── i18n ────────────────────────────────────────────────────────────
+const I18N = {
+  ru: {
+    brand: 'AVIA · ЦЕНТР УПРАВЛЕНИЯ',
+    nav: { home: 'Главная', flights: 'Рейсы', myTickets: 'Мои билеты', profile: 'Профиль', users: 'Пользователи', tickets: 'Билеты', planes: 'Самолёты', crew: 'Экипаж', airports: 'Аэропорты', airlines: 'Авиакомпании', statuses: 'Статусы', classes: 'Классы', roles: 'Роли', logout: 'Выход' },
+    role: { admin: 'админ', dispatcher: 'диспетчер' },
+    home: 'Панель администратора',
+    welcome: 'Вы вошли как',
+    overview: 'Обзор',
+    cards: {
+      users: { t: 'Пользователи', d: 'Управление пассажирами и ролями' },
+      flights: { t: 'Рейсы', d: 'Расписание, создание и редактирование' },
+      planes: { t: 'Самолёты', d: 'Парк воздушных судов, модели, аренда' },
+      tickets: { t: 'Билеты', d: 'Все продажи и статистика' },
+      crew: { t: 'Экипаж', d: 'Назначения на рейсы' },
+      airports: { t: 'Аэропорты', d: 'Хабы и сеть' },
+    },
+    metrics: {
+      inAir: 'В воздухе',
+      onGround: 'На земле',
+      revenue: 'Выручка сегодня',
+      load: 'Загрузка парка',
+      otp: 'Пунктуальность',
+      delays: 'Задержки',
+      passengers: 'Пассажиры',
+      avgDelay: 'Средняя задержка',
+      crew: 'Экипаж в смене',
+      gates: 'Активные гейты',
+    },
+    units: { hours: 'ч', minutes: 'мин', flights: 'рейсов', pax: 'пасс.', planes: 'ВС', usd: '₽' },
+    sections: {
+      live: 'Живая карта · трафик',
+      board: 'Табло вылетов',
+      sched: 'Расписание',
+      activity: 'Активность',
+      weather: 'Метеоусловия',
+      fleet: 'Парк ВС',
+      sales: 'Продажи билетов',
+      hub: 'Хабовая сеть',
+      ops: 'Операционная сводка',
+    },
+    flightsHead: 'Управление рейсами',
+    ticketsHead: 'Билеты и продажи',
+    cols: { no: 'Рейс', route: 'Маршрут', dep: 'Вылет', arr: 'Прилёт', status: 'Статус', plane: 'ВС', gate: 'Гейт', crew: 'Экипаж', cap: 'Загрузка', cls: 'Класс', price: 'Цена', pax: 'Пасс.' },
+    classes: { eco: 'Эконом', biz: 'Бизнес', first: 'Первый' },
+    actions: { new: 'Создать', filter: 'Фильтр', export: 'Экспорт', refresh: 'Обновить', search: 'Поиск...' },
+    status: { boarding: 'Посадка', scheduled: 'По плану', delayed: 'Задержка', cancelled: 'Отменён', arrived: 'Прибыл', enroute: 'В полёте' },
+    weather: { wind: 'Ветер', vis: 'Видимость', cloud: 'Облачность', temp: 'Температура' },
+    last: 'обн.',
+    of: 'из',
+  },
+  en: {
+    brand: 'AVIA · OPS CONTROL',
+    nav: { home: 'Dashboard', flights: 'Flights', myTickets: 'My tickets', profile: 'Profile', users: 'Users', tickets: 'Tickets', planes: 'Aircraft', crew: 'Crew', airports: 'Airports', airlines: 'Airlines', statuses: 'Statuses', classes: 'Classes', roles: 'Roles', logout: 'Sign out' },
+    role: { admin: 'admin', dispatcher: 'dispatcher' },
+    home: 'Operations console',
+    welcome: 'Signed in as',
+    overview: 'Overview',
+    cards: {
+      users: { t: 'Users', d: 'Manage passengers and roles' },
+      flights: { t: 'Flights', d: 'Schedule, create and edit' },
+      planes: { t: 'Aircraft', d: 'Fleet, models, leasing' },
+      tickets: { t: 'Tickets', d: 'All sales and stats' },
+      crew: { t: 'Crew', d: 'Roster and assignments' },
+      airports: { t: 'Airports', d: 'Hubs and network' },
+    },
+    metrics: {
+      inAir: 'In the air',
+      onGround: 'On ground',
+      revenue: 'Revenue today',
+      load: 'Fleet load',
+      otp: 'On-time perf.',
+      delays: 'Delays',
+      passengers: 'Passengers',
+      avgDelay: 'Avg. delay',
+      crew: 'Crew on duty',
+      gates: 'Active gates',
+    },
+    units: { hours: 'h', minutes: 'min', flights: 'flts', pax: 'pax', planes: 'a/c', usd: '$' },
+    sections: {
+      live: 'Live map · traffic',
+      board: 'Departures board',
+      sched: 'Schedule',
+      activity: 'Activity feed',
+      weather: 'Weather',
+      fleet: 'Fleet',
+      sales: 'Ticket sales',
+      hub: 'Hub network',
+      ops: 'Ops summary',
+    },
+    flightsHead: 'Flight management',
+    ticketsHead: 'Tickets & sales',
+    cols: { no: 'Flight', route: 'Route', dep: 'Departure', arr: 'Arrival', status: 'Status', plane: 'A/C', gate: 'Gate', crew: 'Crew', cap: 'Load', cls: 'Class', price: 'Price', pax: 'Pax' },
+    classes: { eco: 'Economy', biz: 'Business', first: 'First' },
+    actions: { new: 'New', filter: 'Filter', export: 'Export', refresh: 'Refresh', search: 'Search...' },
+    status: { boarding: 'Boarding', scheduled: 'Scheduled', delayed: 'Delayed', cancelled: 'Cancelled', arrived: 'Arrived', enroute: 'En route' },
+    weather: { wind: 'Wind', vis: 'Visibility', cloud: 'Clouds', temp: 'Temp' },
+    last: 'upd.',
+    of: 'of',
+  }
+};
+
+const T = (lang) => I18N[lang] || I18N.ru;
+
+// ─── mock data ───────────────────────────────────────────────────────
+const AIRPORTS = [
+  { iata: 'SVO', city: { ru: 'Москва', en: 'Moscow' }, lat: 55.97, lon: 37.41 },
+  { iata: 'LED', city: { ru: 'Санкт-Петербург', en: 'Saint Petersburg' }, lat: 59.80, lon: 30.26 },
+  { iata: 'KZN', city: { ru: 'Казань', en: 'Kazan' }, lat: 55.61, lon: 49.28 },
+  { iata: 'AER', city: { ru: 'Сочи', en: 'Sochi' }, lat: 43.45, lon: 39.93 },
+  { iata: 'OVB', city: { ru: 'Новосибирск', en: 'Novosibirsk' }, lat: 55.01, lon: 82.65 },
+  { iata: 'IKT', city: { ru: 'Иркутск', en: 'Irkutsk' }, lat: 52.27, lon: 104.39 },
+  { iata: 'VVO', city: { ru: 'Владивосток', en: 'Vladivostok' }, lat: 43.40, lon: 132.15 },
+  { iata: 'IST', city: { ru: 'Стамбул', en: 'Istanbul' }, lat: 41.27, lon: 28.74 },
+  { iata: 'DXB', city: { ru: 'Дубай', en: 'Dubai' }, lat: 25.25, lon: 55.36 },
+  { iata: 'BJS', city: { ru: 'Пекин', en: 'Beijing' }, lat: 40.08, lon: 116.58 },
+  { iata: 'CDG', city: { ru: 'Париж', en: 'Paris' }, lat: 49.00, lon: 2.55 },
+  { iata: 'LHR', city: { ru: 'Лондон', en: 'London' }, lat: 51.47, lon: -0.45 },
+];
+
+const PLANES = ['SU-95', 'A320', 'A321', 'B737', 'B777', 'IL-96', 'TU-214'];
+const STATUSES = ['boarding', 'scheduled', 'delayed', 'cancelled', 'arrived', 'enroute'];
+
+function mkFlight(i) {
+  // seeded-pseudo-random so layout is stable
+  const r = (n) => Math.abs(Math.sin(i * 13.37 + n)) % 1;
+  const o = AIRPORTS[Math.floor(r(1) * AIRPORTS.length)];
+  let d = AIRPORTS[Math.floor(r(2) * AIRPORTS.length)];
+  if (d.iata === o.iata) d = AIRPORTS[(AIRPORTS.indexOf(d) + 1) % AIRPORTS.length];
+  const h = Math.floor(r(3) * 24);
+  const m = Math.floor(r(4) * 60);
+  const dur = 60 + Math.floor(r(5) * 240);
+  const ah = (h * 60 + m + dur) / 60 | 0;
+  const am = (h * 60 + m + dur) % 60;
+  const status = STATUSES[Math.floor(r(6) * STATUSES.length)];
+  const plane = PLANES[Math.floor(r(7) * PLANES.length)];
+  const cap = 40 + Math.floor(r(8) * 60);
+  return {
+    no: 'SU' + (1000 + Math.floor(r(9) * 8000)),
+    from: o, to: d,
+    dep: `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`,
+    arr: `${String(ah % 24).padStart(2, '0')}:${String(am).padStart(2, '0')}`,
+    status, plane, cap,
+    gate: 'A' + (1 + Math.floor(r(10) * 28)),
+    price: 3200 + Math.floor(r(11) * 18000),
+  };
+}
+
+const FLIGHTS = Array.from({ length: 24 }, (_, i) => mkFlight(i + 1));
+
+// ─── tiny helpers ────────────────────────────────────────────────────
+function useTick(ms = 1000) {
+  const [, setN] = React.useState(0);
+  React.useEffect(() => {
+    const id = setInterval(() => setN((n) => n + 1), ms);
+    return () => clearInterval(id);
+  }, [ms]);
+}
+
+function nowHM() {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+}
+
+// ─── Logo mark ───────────────────────────────────────────────────────
+function AviaMark({ size = 14 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 14 14" fill="none">
+      <path d="M2 8.5L6 6L7 2L8 6L12 8.5L8 9L7 12L6 9L2 8.5Z" fill="currentColor"/>
+    </svg>
+  );
+}
+
+// ─── Topbar ──────────────────────────────────────────────────────────
+function Topbar({ t, lang, setLang, page, setPage, role = 'admin' }) {
+  const items = [
+    { k: 'home', label: t.nav.home },
+    { k: 'flights', label: t.nav.flights },
+    { k: 'tickets', label: t.nav.tickets },
+    { k: 'planes', label: t.nav.planes },
+    { k: 'crew', label: t.nav.crew },
+    { k: 'airports', label: t.nav.airports },
+    { k: 'users', label: t.nav.users },
+  ];
+  return (
+    <div className="topbar">
+      <div className="brand">
+        <span className="brand-mark"><AviaMark size={12}/></span>
+        <span>AVIA</span>
+        <span style={{ color: 'var(--text-3)', fontWeight: 400, letterSpacing: '0.1em' }}>· OPS</span>
+      </div>
+      <div className="topnav">
+        {items.map(it => (
+          <a key={it.k} className={page === it.k ? 'is-active' : ''} onClick={() => setPage && setPage(it.k)}>{it.label}</a>
+        ))}
+      </div>
+      <div className="top-right">
+        <span className="hud-line tnum"><span className="a">●</span> <Clock/></span>
+        <div className="lang-switch">
+          <button className={lang === 'ru' ? 'is-on' : ''} onClick={() => setLang('ru')}>RU</button>
+          <button className={lang === 'en' ? 'is-on' : ''} onClick={() => setLang('en')}>EN</button>
+        </div>
+        <div className="userchip">
+          <span className="avatar">ЙQ</span>
+          <span>йцу qwe · <span style={{ color: 'var(--accent)' }}>{t.role[role]}</span></span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Clock() {
+  useTick(1000);
+  return <span className="mono">{nowHM()}</span>;
+}
+
+// ─── Rail ────────────────────────────────────────────────────────────
+function Rail({ t, page, setPage, mini = false }) {
+  const items = [
+    { k: 'home', label: t.nav.home, icon: '▣' },
+    { k: 'flights', label: t.nav.flights, icon: '✈' },
+    { k: 'tickets', label: t.nav.tickets, icon: '▭' },
+    { k: 'planes', label: t.nav.planes, icon: '◈' },
+    { k: 'crew', label: t.nav.crew, icon: '◉' },
+    { k: 'airports', label: t.nav.airports, icon: '◐' },
+  ];
+  const sys = [
+    { k: 'users', label: t.nav.users, icon: '◇' },
+    { k: 'airlines', label: t.nav.airlines, icon: '◆' },
+    { k: 'statuses', label: t.nav.statuses, icon: '◍' },
+    { k: 'roles', label: t.nav.roles, icon: '◎' },
+  ];
+  return (
+    <div className={'rail ' + (mini ? 'rail--mini' : '')}>
+      {!mini && <div className="rail-section-title">OPERATIONS</div>}
+      {items.map(it => (
+        <div key={it.k} className={'rail-item ' + (page === it.k ? 'is-active' : '')} onClick={() => setPage && setPage(it.k)} title={it.label}>
+          <span className="mono" style={{ fontSize: 13, color: page === it.k ? 'var(--accent)' : 'var(--text-3)' }}>{it.icon}</span>
+          <span className="rail-item-label">{it.label}</span>
+        </div>
+      ))}
+      <div className="rail-sep"></div>
+      {!mini && <div className="rail-section-title">SYSTEM</div>}
+      {sys.map(it => (
+        <div key={it.k} className="rail-item" title={it.label}>
+          <span className="mono" style={{ fontSize: 13, color: 'var(--text-3)' }}>{it.icon}</span>
+          <span className="rail-item-label">{it.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Split-flap text ─────────────────────────────────────────────────
+function SplitFlap({ text, width, size = 18 }) {
+  const chars = String(text).padEnd(width || String(text).length, ' ').split('');
+  const [phase, setPhase] = React.useState(0);
+  React.useEffect(() => { setPhase(p => p + 1); }, [text]);
+  return (
+    <span className="flap" style={{ fontSize: size }}>
+      {chars.map((c, i) => (
+        <span key={i} className={'flap-cell ' + (phase ? 'is-flipping' : '')} style={{ animationDelay: `${i * 40}ms` }}>{c}</span>
+      ))}
+    </span>
+  );
+}
+
+// ─── Sparkline ───────────────────────────────────────────────────────
+function Sparkline({ data, w = 200, h = 36, fill = true }) {
+  if (!data || !data.length) return null;
+  const min = Math.min(...data), max = Math.max(...data);
+  const rng = (max - min) || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / rng) * (h - 4) - 2;
+    return [x, y];
+  });
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  const dFill = d + ` L ${w} ${h} L 0 ${h} Z`;
+  return (
+    <svg className="spark" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="spark-grad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.4"/>
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      {fill && <path d={dFill} className="fill" fill="url(#spark-grad)"/>}
+      <path d={d} className="line"/>
+      <circle cx={pts[pts.length-1][0]} cy={pts[pts.length-1][1]} r="2.5" fill="var(--accent)"/>
+    </svg>
+  );
+}
+
+// ─── Ticker ──────────────────────────────────────────────────────────
+function Ticker({ items }) {
+  const doubled = [...items, ...items];
+  return (
+    <div className="ticker-mask">
+      <div className="ticker">
+        {doubled.map((it, i) => (
+          <span key={i}>
+            <span className="mono" style={{ color: 'var(--text-3)' }}>{it.k}</span>{' '}
+            <span className={it.delta > 0 ? 'up' : it.delta < 0 ? 'down' : ''}>
+              {it.v}{it.delta != null ? (it.delta > 0 ? ' ▲' : ' ▼') : ''}
+            </span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Globe with route arcs ───────────────────────────────────────────
+// Projects (lon,lat) to (x,y) using simple orthographic projection at given rotation.
+function project(lon, lat, rot, r) {
+  const l = (lon - rot) * Math.PI / 180;
+  const p = lat * Math.PI / 180;
+  const x = Math.cos(p) * Math.sin(l);
+  const y = Math.sin(p);
+  const z = Math.cos(p) * Math.cos(l);
+  return { x: x * r, y: -y * r, z };
+}
+
+function Globe({ size = 360, arcs = 6, animate = true }) {
+  const r = size / 2 - 6;
+  const cx = size / 2, cy = size / 2;
+  const [rot, setRot] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!animate) return;
+    let raf;
+    const start = performance.now();
+    const tick = (now) => {
+      setRot(((now - start) / 80) % 360);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [animate]);
+
+  // longitude lines
+  const longs = [];
+  for (let l = -180; l < 180; l += 30) {
+    const pts = [];
+    for (let lat = -90; lat <= 90; lat += 5) {
+      const p = project(l, lat, rot, r);
+      if (p.z > -0.01) pts.push(`${(cx + p.x).toFixed(1)},${(cy + p.y).toFixed(1)}`);
+      else if (pts.length) { longs.push(pts.join(' ')); pts.length = 0; }
+    }
+    if (pts.length) longs.push(pts.join(' '));
+  }
+  // latitude lines
+  const lats = [];
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const pts = [];
+    for (let l = -180; l <= 180; l += 6) {
+      const p = project(l, lat, rot, r);
+      if (p.z > -0.01) pts.push(`${(cx + p.x).toFixed(1)},${(cy + p.y).toFixed(1)}`);
+      else if (pts.length) { lats.push(pts.join(' ')); pts.length = 0; }
+    }
+    if (pts.length) lats.push(pts.join(' '));
+  }
+
+  // city dots + arcs
+  const cities = AIRPORTS.map(a => {
+    const p = project(a.lon, a.lat, rot, r);
+    return { ...a, x: cx + p.x, y: cy + p.y, z: p.z };
+  });
+
+  const routes = [];
+  for (let i = 0; i < arcs; i++) {
+    const a = AIRPORTS[i % AIRPORTS.length];
+    const b = AIRPORTS[(i + 4) % AIRPORTS.length];
+    routes.push({ a, b });
+  }
+
+  const arcPath = (a, b) => {
+    const pa = project(a.lon, a.lat, rot, r);
+    const pb = project(b.lon, b.lat, rot, r);
+    if (pa.z < -0.1 && pb.z < -0.1) return null;
+    const mx = (pa.x + pb.x) / 2;
+    const my = (pa.y + pb.y) / 2;
+    // arc-out bulge along the perpendicular
+    const len = Math.hypot(pb.x - pa.x, pb.y - pa.y);
+    const arch = len * 0.5;
+    const dist = Math.hypot(mx, my) || 1;
+    const ox = mx + (mx / dist) * arch;
+    const oy = my + (my / dist) * arch;
+    return `M ${(cx + pa.x).toFixed(1)} ${(cy + pa.y).toFixed(1)} Q ${(cx + ox).toFixed(1)} ${(cy + oy).toFixed(1)} ${(cx + pb.x).toFixed(1)} ${(cy + pb.y).toFixed(1)}`;
+  };
+
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%" className="globe">
+      <defs>
+        <radialGradient id="globe-fill" cx="35%" cy="32%">
+          <stop offset="0%" stopColor="rgba(168,255,96,0.08)"/>
+          <stop offset="60%" stopColor="rgba(168,255,96,0.02)"/>
+          <stop offset="100%" stopColor="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <radialGradient id="globe-edge" cx="50%" cy="50%">
+          <stop offset="70%" stopColor="rgba(168,255,96,0)"/>
+          <stop offset="100%" stopColor="rgba(168,255,96,0.25)"/>
+        </radialGradient>
+      </defs>
+      {/* sphere */}
+      <circle cx={cx} cy={cy} r={r} fill="url(#globe-fill)" stroke="var(--accent-dim)" strokeWidth="0.6" opacity="0.7"/>
+      <circle cx={cx} cy={cy} r={r} fill="url(#globe-edge)"/>
+      {/* grid */}
+      <g stroke="var(--accent-dim)" strokeWidth="0.4" fill="none" opacity="0.45">
+        {longs.map((p, i) => <polyline key={'lo'+i} points={p}/>)}
+        {lats.map((p, i) => <polyline key={'la'+i} points={p}/>)}
+      </g>
+      {/* equator */}
+      <ellipse cx={cx} cy={cy} rx={r} ry={r * 0.04} fill="none" stroke="var(--accent)" strokeWidth="0.4" opacity="0.4"/>
+      {/* arcs */}
+      <g>
+        {routes.map((rt, i) => {
+          const d = arcPath(rt.a, rt.b);
+          if (!d) return null;
+          return (
+            <g key={i}>
+              <path d={d} stroke="var(--accent)" strokeWidth="1" fill="none" opacity="0.5"/>
+              <path d={d} stroke="var(--accent)" strokeWidth="1.6" fill="none"
+                strokeDasharray="3 6"
+                style={{ animation: `arc-dash ${1500 / (window.__aviaSpeed || 1)}ms linear infinite` }}/>
+            </g>
+          );
+        })}
+      </g>
+      {/* cities */}
+      <g>
+        {cities.filter(c => c.z > -0.05).map((c, i) => (
+          <g key={i} opacity={c.z > 0 ? 1 : 0.4}>
+            <circle cx={c.x} cy={c.y} r="2" fill="var(--accent)"/>
+            <circle cx={c.x} cy={c.y} r="2" fill="var(--accent)" opacity="0.5">
+              <animate attributeName="r" values="2;7;2" dur={`${2000 + (i % 4) * 400}ms`} repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.5;0;0.5" dur={`${2000 + (i % 4) * 400}ms`} repeatCount="indefinite"/>
+            </circle>
+            {c.z > 0.4 && (
+              <text x={c.x + 5} y={c.y - 3} fill="var(--text-2)" fontSize="7" fontFamily="var(--font-mono)" opacity="0.7">{c.iata}</text>
+            )}
+          </g>
+        ))}
+      </g>
+      {/* crosshair */}
+      <g stroke="var(--accent)" strokeWidth="0.3" opacity="0.3">
+        <line x1={cx} y1="0" x2={cx} y2={size}/>
+        <line x1="0" y1={cy} x2={size} y2={cy}/>
+      </g>
+      {/* corner brackets */}
+      <g stroke="var(--accent)" strokeWidth="1" fill="none" opacity="0.6">
+        <path d={`M 4 14 L 4 4 L 14 4`}/>
+        <path d={`M ${size - 14} 4 L ${size - 4} 4 L ${size - 4} 14`}/>
+        <path d={`M 4 ${size - 14} L 4 ${size - 4} L 14 ${size - 4}`}/>
+        <path d={`M ${size - 14} ${size - 4} L ${size - 4} ${size - 4} L ${size - 4} ${size - 14}`}/>
+      </g>
+    </svg>
+  );
+}
+
+// ─── Radar scope ─────────────────────────────────────────────────────
+function RadarScope({ size = 360, blips = 10 }) {
+  const r = size / 2 - 6;
+  const cx = size / 2, cy = size / 2;
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="100%">
+      <defs>
+        <radialGradient id="sweep-grad">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.6"/>
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0"/>
+        </radialGradient>
+      </defs>
+      {/* rings */}
+      <g fill="none" stroke="var(--accent-dim)" strokeWidth="0.5" opacity="0.6">
+        {[0.25, 0.5, 0.75, 1].map(f => <circle key={f} cx={cx} cy={cy} r={r * f}/>)}
+      </g>
+      {/* crosshairs */}
+      <g stroke="var(--accent-dim)" strokeWidth="0.5" opacity="0.5">
+        <line x1={cx} y1={cy - r} x2={cx} y2={cy + r}/>
+        <line x1={cx - r} y1={cy} x2={cx + r} y2={cy}/>
+        <line x1={cx + r * 0.7 * Math.cos(Math.PI / 4)} y1={cy - r * 0.7 * Math.sin(Math.PI / 4)} x2={cx - r * 0.7 * Math.cos(Math.PI / 4)} y2={cy + r * 0.7 * Math.sin(Math.PI / 4)}/>
+        <line x1={cx - r * 0.7 * Math.cos(Math.PI / 4)} y1={cy - r * 0.7 * Math.sin(Math.PI / 4)} x2={cx + r * 0.7 * Math.cos(Math.PI / 4)} y2={cy + r * 0.7 * Math.sin(Math.PI / 4)}/>
+      </g>
+      {/* sweep */}
+      <g className="radar-sweep" style={{ transformOrigin: `${cx}px ${cy}px` }}>
+        <path d={`M ${cx} ${cy} L ${cx + r} ${cy} A ${r} ${r} 0 0 0 ${cx + r * Math.cos(-Math.PI / 4)} ${cy + r * Math.sin(-Math.PI / 4)} Z`} fill="url(#sweep-grad)"/>
+      </g>
+      {/* blips */}
+      {Array.from({ length: blips }, (_, i) => {
+        const ang = (i * 137.5) % 360 * Math.PI / 180;
+        const dist = r * (0.2 + (i * 7 % 10) / 12);
+        const x = cx + Math.cos(ang) * dist;
+        const y = cy + Math.sin(ang) * dist;
+        const d = (i * 3) % 5;
+        return (
+          <g key={i}>
+            <circle cx={x} cy={y} r="2.5" fill="var(--accent)"/>
+            <circle cx={x} cy={y} r="2.5" fill="none" stroke="var(--accent)" strokeWidth="0.5">
+              <animate attributeName="r" from="2.5" to="14" dur={`${2400 + d * 200}ms`} begin={`${i * 200}ms`} repeatCount="indefinite"/>
+              <animate attributeName="opacity" from="0.8" to="0" dur={`${2400 + d * 200}ms`} begin={`${i * 200}ms`} repeatCount="indefinite"/>
+            </circle>
+            <text x={x + 6} y={y - 4} fontSize="7" fill="var(--text-2)" fontFamily="var(--font-mono)" opacity="0.7">SU{1000 + i * 17}</text>
+          </g>
+        );
+      })}
+      {/* center */}
+      <circle cx={cx} cy={cy} r="3" fill="var(--accent)"/>
+      <circle cx={cx} cy={cy} r="6" fill="none" stroke="var(--accent)" strokeWidth="0.6"/>
+      {/* compass */}
+      <g fill="var(--text-3)" fontFamily="var(--font-mono)" fontSize="9" textAnchor="middle">
+        <text x={cx} y="14">N</text>
+        <text x={cx} y={size - 6}>S</text>
+        <text x="10" y={cy + 3}>W</text>
+        <text x={size - 10} y={cy + 3}>E</text>
+      </g>
+    </svg>
+  );
+}
+
+// ─── HUD line ────────────────────────────────────────────────────────
+function HUD({ k, v, accent }) {
+  return <span className="hud-line">{k}: <span className={accent ? 'a' : 'v'}>{v}</span></span>;
+}
+
+// ─── World mini-map (flat, used in some artboards) ───────────────────
+function WorldMap({ height = 200 }) {
+  // very simplified continent silhouettes via points
+  return (
+    <svg viewBox="0 0 720 360" style={{ width: '100%', height, display: 'block' }} preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <pattern id="grid-pat" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--grid)" strokeWidth="0.5"/>
+        </pattern>
+      </defs>
+      <rect width="720" height="360" fill="url(#grid-pat)"/>
+      {/* approximate continents */}
+      <g fill="var(--panel-3)" stroke="var(--accent-dim)" strokeWidth="0.5" opacity="0.85">
+        {/* Eurasia + Russia */}
+        <path d="M 360 80 L 420 70 L 500 85 L 560 100 L 620 100 L 680 115 L 700 140 L 660 160 L 600 170 L 560 175 L 510 165 L 470 155 L 420 145 L 380 150 L 360 140 Z"/>
+        {/* Europe */}
+        <path d="M 340 110 L 380 95 L 410 100 L 430 120 L 420 145 L 380 150 L 350 145 L 340 130 Z"/>
+        {/* Africa */}
+        <path d="M 380 165 L 420 170 L 440 200 L 450 240 L 430 290 L 400 280 L 380 240 L 370 200 Z"/>
+        {/* N America */}
+        <path d="M 80 80 L 140 70 L 200 85 L 240 110 L 250 150 L 220 170 L 180 175 L 140 165 L 100 145 L 80 115 Z"/>
+        {/* S America */}
+        <path d="M 200 200 L 230 210 L 250 250 L 240 290 L 220 320 L 200 310 L 190 270 L 195 230 Z"/>
+        {/* Australia */}
+        <path d="M 580 250 L 640 245 L 680 260 L 670 290 L 620 295 L 590 280 Z"/>
+      </g>
+    </svg>
+  );
+}
+
+// ─── Status pill ─────────────────────────────────────────────────────
+function StatusPill({ s, t }) {
+  return <span className="status-pill" data-s={s}>{t.status[s]}</span>;
+}
+
+// ─── Capacity bar ────────────────────────────────────────────────────
+function Cap({ pct }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div className="prog" style={{ flex: 1 }}><span style={{ width: pct + '%' }}/></div>
+      <span className="mono" style={{ fontSize: 11, color: 'var(--text-3)', minWidth: 28 }}>{pct}%</span>
+    </div>
+  );
+}
+
+Object.assign(window, {
+  I18N, T, AIRPORTS, FLIGHTS, PLANES, STATUSES,
+  useTick, nowHM,
+  AviaMark, Topbar, Rail, Clock,
+  SplitFlap, Sparkline, Ticker,
+  Globe, RadarScope, WorldMap,
+  HUD, StatusPill, Cap,
+});
+
+
+
+// tweaks-panel.jsx
+// Reusable Tweaks shell + form-control helpers.
+//
+// Owns the host protocol (listens for __activate_edit_mode / __deactivate_edit_mode,
+// posts __edit_mode_available / __edit_mode_set_keys / __edit_mode_dismissed) so
+// individual prototypes don't re-roll it. Ships a consistent set of controls so you
+// don't hand-draw <input type="range">, segmented radios, steppers, etc.
+//
+// Usage (in an HTML file that loads React + Babel):
+//
+//   const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+//     "primaryColor": "#D97757",
+//     "palette": ["#D97757", "#29261b", "#f6f4ef"],
+//     "fontSize": 16,
+//     "density": "regular",
+//     "dark": false
+//   }/*EDITMODE-END*/;
+//
+//   function App() {
+//     const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+//     return (
+//       <div style={{ fontSize: t.fontSize, color: t.primaryColor }}>
+//         Hello
+//         <TweaksPanel>
+//           <TweakSection label="Typography" />
+//           <TweakSlider label="Font size" value={t.fontSize} min={10} max={32} unit="px"
+//                        onChange={(v) => setTweak('fontSize', v)} />
+//           <TweakRadio  label="Density" value={t.density}
+//                        options={['compact', 'regular', 'comfy']}
+//                        onChange={(v) => setTweak('density', v)} />
+//           <TweakSection label="Theme" />
+//           <TweakColor  label="Primary" value={t.primaryColor}
+//                        options={['#D97757', '#2A6FDB', '#1F8A5B', '#7A5AE0']}
+//                        onChange={(v) => setTweak('primaryColor', v)} />
+//           <TweakColor  label="Palette" value={t.palette}
+//                        options={[['#D97757', '#29261b', '#f6f4ef'],
+//                                  ['#475569', '#0f172a', '#f1f5f9']]}
+//                        onChange={(v) => setTweak('palette', v)} />
+//           <TweakToggle label="Dark mode" value={t.dark}
+//                        onChange={(v) => setTweak('dark', v)} />
+//         </TweaksPanel>
+//       </div>
+//     );
+//   }
+//
+// ─────────────────────────────────────────────────────────────────────────────
+
+const __TWEAKS_STYLE = `
+  .twk-panel{position:fixed;right:16px;bottom:16px;z-index:2147483646;width:280px;
+    max-height:calc(100vh - 32px);display:flex;flex-direction:column;
+    transform:scale(var(--dc-inv-zoom,1));transform-origin:bottom right;
+    background:rgba(250,249,247,.78);color:#29261b;
+    -webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);
+    border:.5px solid rgba(255,255,255,.6);border-radius:14px;
+    box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 12px 40px rgba(0,0,0,.18);
+    font:11.5px/1.4 ui-sans-serif,system-ui,-apple-system,sans-serif;overflow:hidden}
+  .twk-hd{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 8px 10px 14px;cursor:move;user-select:none}
+  .twk-hd b{font-size:12px;font-weight:600;letter-spacing:.01em}
+  .twk-x{appearance:none;border:0;background:transparent;color:rgba(41,38,27,.55);
+    width:22px;height:22px;border-radius:6px;cursor:default;font-size:13px;line-height:1}
+  .twk-x:hover{background:rgba(0,0,0,.06);color:#29261b}
+  .twk-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:10px;
+    overflow-y:auto;overflow-x:hidden;min-height:0;
+    scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}
+  .twk-body::-webkit-scrollbar{width:8px}
+  .twk-body::-webkit-scrollbar-track{background:transparent;margin:2px}
+  .twk-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px;
+    border:2px solid transparent;background-clip:content-box}
+  .twk-body::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.25);
+    border:2px solid transparent;background-clip:content-box}
+  .twk-row{display:flex;flex-direction:column;gap:5px}
+  .twk-row-h{flex-direction:row;align-items:center;justify-content:space-between;gap:10px}
+  .twk-lbl{display:flex;justify-content:space-between;align-items:baseline;
+    color:rgba(41,38,27,.72)}
+  .twk-lbl>span:first-child{font-weight:500}
+  .twk-val{color:rgba(41,38,27,.5);font-variant-numeric:tabular-nums}
+
+  .twk-sect{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+    color:rgba(41,38,27,.45);padding:10px 0 0}
+  .twk-sect:first-child{padding-top:0}
+
+  .twk-field{appearance:none;box-sizing:border-box;width:100%;min-width:0;height:26px;padding:0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;
+    background:rgba(255,255,255,.6);color:inherit;font:inherit;outline:none}
+  .twk-field:focus{border-color:rgba(0,0,0,.25);background:rgba(255,255,255,.85)}
+  select.twk-field{padding-right:22px;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='rgba(0,0,0,.5)' d='M0 0h10L5 6z'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+
+  .twk-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;margin:6px 0;
+    border-radius:999px;background:rgba(0,0,0,.12);outline:none}
+  .twk-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+    width:14px;height:14px;border-radius:50%;background:#fff;
+    border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+  .twk-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;
+    background:#fff;border:.5px solid rgba(0,0,0,.12);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:default}
+
+  .twk-seg{position:relative;display:flex;padding:2px;border-radius:8px;
+    background:rgba(0,0,0,.06);user-select:none}
+  .twk-seg-thumb{position:absolute;top:2px;bottom:2px;border-radius:6px;
+    background:rgba(255,255,255,.9);box-shadow:0 1px 2px rgba(0,0,0,.12);
+    transition:left .15s cubic-bezier(.3,.7,.4,1),width .15s}
+  .twk-seg.dragging .twk-seg-thumb{transition:none}
+  .twk-seg button{appearance:none;position:relative;z-index:1;flex:1;border:0;
+    background:transparent;color:inherit;font:inherit;font-weight:500;min-height:22px;
+    border-radius:6px;cursor:default;padding:4px 6px;line-height:1.2;
+    overflow-wrap:anywhere}
+
+  .twk-toggle{position:relative;width:32px;height:18px;border:0;border-radius:999px;
+    background:rgba(0,0,0,.15);transition:background .15s;cursor:default;padding:0}
+  .twk-toggle[data-on="1"]{background:#34c759}
+  .twk-toggle i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+    background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+  .twk-toggle[data-on="1"] i{transform:translateX(14px)}
+
+  .twk-num{display:flex;align-items:center;box-sizing:border-box;min-width:0;height:26px;padding:0 0 0 8px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:7px;background:rgba(255,255,255,.6)}
+  .twk-num-lbl{font-weight:500;color:rgba(41,38,27,.6);cursor:ew-resize;
+    user-select:none;padding-right:8px}
+  .twk-num input{flex:1;min-width:0;height:100%;border:0;background:transparent;
+    font:inherit;font-variant-numeric:tabular-nums;text-align:right;padding:0 8px 0 0;
+    outline:none;color:inherit;-moz-appearance:textfield}
+  .twk-num input::-webkit-inner-spin-button,.twk-num input::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0}
+  .twk-num-unit{padding-right:8px;color:rgba(41,38,27,.45)}
+
+  .twk-btn{appearance:none;height:26px;padding:0 12px;border:0;border-radius:7px;
+    background:rgba(0,0,0,.78);color:#fff;font:inherit;font-weight:500;cursor:default}
+  .twk-btn:hover{background:rgba(0,0,0,.88)}
+  .twk-btn.secondary{background:rgba(0,0,0,.06);color:inherit}
+  .twk-btn.secondary:hover{background:rgba(0,0,0,.1)}
+
+  .twk-swatch{appearance:none;-webkit-appearance:none;width:56px;height:22px;
+    border:.5px solid rgba(0,0,0,.1);border-radius:6px;padding:0;cursor:default;
+    background:transparent;flex-shrink:0}
+  .twk-swatch::-webkit-color-swatch-wrapper{padding:0}
+  .twk-swatch::-webkit-color-swatch{border:0;border-radius:5.5px}
+  .twk-swatch::-moz-color-swatch{border:0;border-radius:5.5px}
+
+  .twk-chips{display:flex;gap:6px}
+  .twk-chip{position:relative;appearance:none;flex:1;min-width:0;height:46px;
+    padding:0;border:0;border-radius:6px;overflow:hidden;cursor:default;
+    box-shadow:0 0 0 .5px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.06);
+    transition:transform .12s cubic-bezier(.3,.7,.4,1),box-shadow .12s}
+  .twk-chip:hover{transform:translateY(-1px);
+    box-shadow:0 0 0 .5px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.12)}
+  .twk-chip[data-on="1"]{box-shadow:0 0 0 1.5px rgba(0,0,0,.85),
+    0 2px 6px rgba(0,0,0,.15)}
+  .twk-chip>span{position:absolute;top:0;bottom:0;right:0;width:34%;
+    display:flex;flex-direction:column;box-shadow:-1px 0 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i{flex:1;box-shadow:0 -1px 0 rgba(0,0,0,.1)}
+  .twk-chip>span>i:first-child{box-shadow:none}
+  .twk-chip svg{position:absolute;top:6px;left:6px;width:13px;height:13px;
+    filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+`;
+
+// ── useTweaks ───────────────────────────────────────────────────────────────
+// Single source of truth for tweak values. setTweak persists via the host
+// (__edit_mode_set_keys → host rewrites the EDITMODE block on disk).
+function useTweaks(defaults) {
+  const [values, setValues] = React.useState(defaults);
+  // Accepts either setTweak('key', value) or setTweak({ key: value, ... }) so a
+  // useState-style call doesn't write a "[object Object]" key into the persisted
+  // JSON block.
+  const setTweak = React.useCallback((keyOrEdits, val) => {
+    const edits = typeof keyOrEdits === 'object' && keyOrEdits !== null
+      ? keyOrEdits : { [keyOrEdits]: val };
+    setValues((prev) => ({ ...prev, ...edits }));
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits }, '*');
+    // Same-window signal so in-page listeners (deck-stage rail thumbnails)
+    // can react — the parent message only reaches the host, not peers.
+    window.dispatchEvent(new CustomEvent('tweakchange', { detail: edits }));
+  }, []);
+  return [values, setTweak];
+}
+
+// ── TweaksPanel ─────────────────────────────────────────────────────────────
+// Floating shell. Registers the protocol listener BEFORE announcing
+// availability — if the announce ran first, the host's activate could land
+// before our handler exists and the toolbar toggle would silently no-op.
+// The close button posts __edit_mode_dismissed so the host's toolbar toggle
+// flips off in lockstep; the host echoes __deactivate_edit_mode back which
+// is what actually hides the panel.
+function TweaksPanel({ title = 'Tweaks', noDeckControls = false, children }) {
+  const [open, setOpen] = React.useState(false);
+  const dragRef = React.useRef(null);
+  // Auto-inject a rail toggle when a <deck-stage> is on the page. The
+  // toggle drives the deck's per-viewer _railVisible via window message;
+  // state is mirrored from the same localStorage key the deck reads so
+  // the control reflects reality across reloads. The mechanism is the
+  // message — authors who want custom placement can post it directly
+  // and pass noDeckControls to suppress this one.
+  const hasDeckStage = React.useMemo(
+    () => typeof document !== 'undefined' && !!document.querySelector('deck-stage'),
+    [],
+  );
+  // deck-stage enables its rail in connectedCallback, but this panel can
+  // mount before that element has upgraded. The initial read catches the
+  // common case; the listener covers mounting first. (Older deck-stage.js
+  // copies still wait for the host's __omelette_rail_enabled postMessage —
+  // same listener handles those.)
+  const [railEnabled, setRailEnabled] = React.useState(
+    () => hasDeckStage && !!document.querySelector('deck-stage')?._railEnabled,
+  );
+  React.useEffect(() => {
+    if (!hasDeckStage || railEnabled) return undefined;
+    const onMsg = (e) => {
+      if (e.data && e.data.type === '__omelette_rail_enabled') setRailEnabled(true);
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, [hasDeckStage, railEnabled]);
+  const [railVisible, setRailVisible] = React.useState(() => {
+    try { return localStorage.getItem('deck-stage.railVisible') !== '0'; } catch (e) { return true; }
+  });
+  const toggleRail = (on) => {
+    setRailVisible(on);
+    window.postMessage({ type: '__deck_rail_visible', on }, '*');
+  };
+  const offsetRef = React.useRef({ x: 16, y: 16 });
+  const PAD = 16;
+
+  const clampToViewport = React.useCallback(() => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const w = panel.offsetWidth, h = panel.offsetHeight;
+    const maxRight = Math.max(PAD, window.innerWidth - w - PAD);
+    const maxBottom = Math.max(PAD, window.innerHeight - h - PAD);
+    offsetRef.current = {
+      x: Math.min(maxRight, Math.max(PAD, offsetRef.current.x)),
+      y: Math.min(maxBottom, Math.max(PAD, offsetRef.current.y)),
+    };
+    panel.style.right = offsetRef.current.x + 'px';
+    panel.style.bottom = offsetRef.current.y + 'px';
+  }, []);
+
+  React.useEffect(() => {
+    if (!open) return;
+    clampToViewport();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', clampToViewport);
+      return () => window.removeEventListener('resize', clampToViewport);
+    }
+    const ro = new ResizeObserver(clampToViewport);
+    ro.observe(document.documentElement);
+    return () => ro.disconnect();
+  }, [open, clampToViewport]);
+
+  React.useEffect(() => {
+    const onMsg = (e) => {
+      const t = e?.data?.type;
+      if (t === '__activate_edit_mode') setOpen(true);
+      else if (t === '__deactivate_edit_mode') setOpen(false);
+    };
+    window.addEventListener('message', onMsg);
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const dismiss = () => {
+    setOpen(false);
+    window.parent.postMessage({ type: '__edit_mode_dismissed' }, '*');
+  };
+
+  const onDragStart = (e) => {
+    const panel = dragRef.current;
+    if (!panel) return;
+    const r = panel.getBoundingClientRect();
+    const sx = e.clientX, sy = e.clientY;
+    const startRight = window.innerWidth - r.right;
+    const startBottom = window.innerHeight - r.bottom;
+    const move = (ev) => {
+      offsetRef.current = {
+        x: startRight - (ev.clientX - sx),
+        y: startBottom - (ev.clientY - sy),
+      };
+      clampToViewport();
+    };
+    const up = () => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
+    };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+  };
+
+  if (!open) return null;
+  return (
+    <>
+      <style>{__TWEAKS_STYLE}</style>
+      <div ref={dragRef} className="twk-panel" data-noncommentable=""
+           style={{ right: offsetRef.current.x, bottom: offsetRef.current.y }}>
+        <div className="twk-hd" onMouseDown={onDragStart}>
+          <b>{title}</b>
+          <button className="twk-x" aria-label="Close tweaks"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={dismiss}>✕</button>
+        </div>
+        <div className="twk-body">
+          {children}
+          {hasDeckStage && railEnabled && !noDeckControls && (
+            <TweakSection label="Deck">
+              <TweakToggle label="Thumbnail rail" value={railVisible} onChange={toggleRail} />
+            </TweakSection>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Layout helpers ──────────────────────────────────────────────────────────
+
+function TweakSection({ label, children }) {
+  return (
+    <>
+      <div className="twk-sect">{label}</div>
+      {children}
+    </>
+  );
+}
+
+function TweakRow({ label, value, children, inline = false }) {
+  return (
+    <div className={inline ? 'twk-row twk-row-h' : 'twk-row'}>
+      <div className="twk-lbl">
+        <span>{label}</span>
+        {value != null && <span className="twk-val">{value}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ── Controls ────────────────────────────────────────────────────────────────
+
+function TweakSlider({ label, value, min = 0, max = 100, step = 1, unit = '', onChange }) {
+  return (
+    <TweakRow label={label} value={`${value}${unit}`}>
+      <input type="range" className="twk-slider" min={min} max={max} step={step}
+             value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </TweakRow>
+  );
+}
+
+function TweakToggle({ label, value, onChange }) {
+  return (
+    <div className="twk-row twk-row-h">
+      <div className="twk-lbl"><span>{label}</span></div>
+      <button type="button" className="twk-toggle" data-on={value ? '1' : '0'}
+              role="switch" aria-checked={!!value}
+              onClick={() => onChange(!value)}><i /></button>
+    </div>
+  );
+}
+
+function TweakRadio({ label, value, options, onChange }) {
+  const trackRef = React.useRef(null);
+  const [dragging, setDragging] = React.useState(false);
+  // The active value is read by pointer-move handlers attached for the lifetime
+  // of a drag — ref it so a stale closure doesn't fire onChange for every move.
+  const valueRef = React.useRef(value);
+  valueRef.current = value;
+
+  // Segments wrap mid-word once per-segment width runs out. The track is
+  // ~248px (280 panel − 28 body pad − 4 seg pad), each button loses 12px
+  // to its own padding, and 11.5px system-ui averages ~6.3px/char — so 2
+  // options fit ~16 chars each, 3 fit ~10. Past that (or >3 options), fall
+  // back to a dropdown rather than wrap.
+  const labelLen = (o) => String(typeof o === 'object' ? o.label : o).length;
+  const maxLen = options.reduce((m, o) => Math.max(m, labelLen(o)), 0);
+  const fitsAsSegments = maxLen <= ({ 2: 16, 3: 10 }[options.length] ?? 0);
+  if (!fitsAsSegments) {
+    // <select> emits strings — map back to the original option value so the
+    // fallback stays type-preserving (numbers, booleans) like the segment path.
+    const resolve = (s) => {
+      const m = options.find((o) => String(typeof o === 'object' ? o.value : o) === s);
+      return m === undefined ? s : typeof m === 'object' ? m.value : m;
+    };
+    return <TweakSelect label={label} value={value} options={options}
+                        onChange={(s) => onChange(resolve(s))} />;
+  }
+  const opts = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
+  const idx = Math.max(0, opts.findIndex((o) => o.value === value));
+  const n = opts.length;
+
+  const segAt = (clientX) => {
+    const r = trackRef.current.getBoundingClientRect();
+    const inner = r.width - 4;
+    const i = Math.floor(((clientX - r.left - 2) / inner) * n);
+    return opts[Math.max(0, Math.min(n - 1, i))].value;
+  };
+
+  const onPointerDown = (e) => {
+    setDragging(true);
+    const v0 = segAt(e.clientX);
+    if (v0 !== valueRef.current) onChange(v0);
+    const move = (ev) => {
+      if (!trackRef.current) return;
+      const v = segAt(ev.clientX);
+      if (v !== valueRef.current) onChange(v);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  return (
+    <TweakRow label={label}>
+      <div ref={trackRef} role="radiogroup" onPointerDown={onPointerDown}
+           className={dragging ? 'twk-seg dragging' : 'twk-seg'}>
+        <div className="twk-seg-thumb"
+             style={{ left: `calc(2px + ${idx} * (100% - 4px) / ${n})`,
+                      width: `calc((100% - 4px) / ${n})` }} />
+        {opts.map((o) => (
+          <button key={o.value} type="button" role="radio" aria-checked={o.value === value}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakSelect({ label, value, options, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <select className="twk-field" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => {
+          const v = typeof o === 'object' ? o.value : o;
+          const l = typeof o === 'object' ? o.label : o;
+          return <option key={v} value={v}>{l}</option>;
+        })}
+      </select>
+    </TweakRow>
+  );
+}
+
+function TweakText({ label, value, placeholder, onChange }) {
+  return (
+    <TweakRow label={label}>
+      <input className="twk-field" type="text" value={value} placeholder={placeholder}
+             onChange={(e) => onChange(e.target.value)} />
+    </TweakRow>
+  );
+}
+
+function TweakNumber({ label, value, min, max, step = 1, unit = '', onChange }) {
+  const clamp = (n) => {
+    if (min != null && n < min) return min;
+    if (max != null && n > max) return max;
+    return n;
+  };
+  const startRef = React.useRef({ x: 0, val: 0 });
+  const onScrubStart = (e) => {
+    e.preventDefault();
+    startRef.current = { x: e.clientX, val: value };
+    const decimals = (String(step).split('.')[1] || '').length;
+    const move = (ev) => {
+      const dx = ev.clientX - startRef.current.x;
+      const raw = startRef.current.val + dx * step;
+      const snapped = Math.round(raw / step) * step;
+      onChange(clamp(Number(snapped.toFixed(decimals))));
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  return (
+    <div className="twk-num">
+      <span className="twk-num-lbl" onPointerDown={onScrubStart}>{label}</span>
+      <input type="number" value={value} min={min} max={max} step={step}
+             onChange={(e) => onChange(clamp(Number(e.target.value)))} />
+      {unit && <span className="twk-num-unit">{unit}</span>}
+    </div>
+  );
+}
+
+// Relative-luminance contrast pick — checkmarks drawn over a swatch need to
+// read on both #111 and #fafafa without per-option configuration. Hex input
+// only (#rgb / #rrggbb); named or rgb()/hsl() colors fall through to "light".
+function __twkIsLight(hex) {
+  const h = String(hex).replace('#', '');
+  const x = h.length === 3 ? h.replace(/./g, (c) => c + c) : h.padEnd(6, '0');
+  const n = parseInt(x.slice(0, 6), 16);
+  if (Number.isNaN(n)) return true;
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return r * 299 + g * 587 + b * 114 > 148000;
+}
+
+const __TwkCheck = ({ light }) => (
+  <svg viewBox="0 0 14 14" aria-hidden="true">
+    <path d="M3 7.2 5.8 10 11 4.2" fill="none" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          stroke={light ? 'rgba(0,0,0,.78)' : '#fff'} />
+  </svg>
+);
+
+// TweakColor — curated color/palette picker. Each option is either a single
+// hex string or an array of 1-5 hex strings; the card adapts — a lone color
+// renders solid, a palette renders colors[0] as the hero (left ~2/3) with the
+// rest stacked in a sharp column on the right. onChange emits the
+// option in the shape it was passed (string stays string, array stays array).
+// Without options it falls back to the native color input for back-compat.
+function TweakColor({ label, value, options, onChange }) {
+  if (!options || !options.length) {
+    return (
+      <div className="twk-row twk-row-h">
+        <div className="twk-lbl"><span>{label}</span></div>
+        <input type="color" className="twk-swatch" value={value}
+               onChange={(e) => onChange(e.target.value)} />
+      </div>
+    );
+  }
+  // Native <input type=color> emits lowercase hex per the HTML spec, so
+  // compare case-insensitively. String() guards JSON.stringify(undefined),
+  // which returns the primitive undefined (no .toLowerCase).
+  const key = (o) => String(JSON.stringify(o)).toLowerCase();
+  const cur = key(value);
+  return (
+    <TweakRow label={label}>
+      <div className="twk-chips" role="radiogroup">
+        {options.map((o, i) => {
+          const colors = Array.isArray(o) ? o : [o];
+          const [hero, ...rest] = colors;
+          const sup = rest.slice(0, 4);
+          const on = key(o) === cur;
+          return (
+            <button key={i} type="button" className="twk-chip" role="radio"
+                    aria-checked={on} data-on={on ? '1' : '0'}
+                    aria-label={colors.join(', ')} title={colors.join(' · ')}
+                    style={{ background: hero }}
+                    onClick={() => onChange(o)}>
+              {sup.length > 0 && (
+                <span>
+                  {sup.map((c, j) => <i key={j} style={{ background: c }} />)}
+                </span>
+              )}
+              {on && <__TwkCheck light={__twkIsLight(hero)} />}
+            </button>
+          );
+        })}
+      </div>
+    </TweakRow>
+  );
+}
+
+function TweakButton({ label, onClick, secondary = false }) {
+  return (
+    <button type="button" className={secondary ? 'twk-btn secondary' : 'twk-btn'}
+            onClick={onClick}>{label}</button>
+  );
+}
+
+Object.assign(window, {
+  useTweaks, TweaksPanel, TweakSection, TweakRow,
+  TweakSlider, TweakToggle, TweakRadio, TweakSelect,
+  TweakText, TweakNumber, TweakColor, TweakButton,
+});
+
+
+
+/* ─── main.jsx: composes DesignCanvas with 6 artboards + Tweaks ────── */
+/* global React, ReactDOM,
+   DesignCanvas, DCSection, DCArtboard,
+   TweaksPanel, TweakSection, TweakSlider, TweakToggle, TweakRadio, TweakSelect, TweakColor, useTweaks,
+   ArtCockpit, ArtRadar, ArtBoard, ArtGrid, ArtFlights, ArtTickets */
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "dark",
+  "density": "regular",
+  "radius": "soft",
+  "speed": 1,
+  "font": "cockpit",
+  "accent": "#a8ff60"
+}/*EDITMODE-END*/;
+
+const FONT_PAIRS = {
+  cockpit:   { display: "'Space Grotesk', system-ui, sans-serif", mono: "'JetBrains Mono', ui-monospace, monospace" },
+  tech:      { display: "'IBM Plex Sans', system-ui, sans-serif",  mono: "'IBM Plex Mono', ui-monospace, monospace" },
+  brutalist: { display: "'Geist', system-ui, sans-serif",          mono: "'Geist Mono', ui-monospace, monospace" },
+  editorial: { display: "'Instrument Serif', Georgia, serif",      mono: "'JetBrains Mono', ui-monospace, monospace" },
+};
+
+const ACCENTS = {
+  '#a8ff60': { a2: '#74cc34', dim: '#4a7a1f', glow: 'rgba(168,255,96,0.35)' },
+  '#60e8ff': { a2: '#28b8d8', dim: '#1f6478', glow: 'rgba(96,232,255,0.35)' },
+  '#ffb84d': { a2: '#cc8a1a', dim: '#7a5210', glow: 'rgba(255,184,77,0.35)' },
+  '#ff60c8': { a2: '#cc2890', dim: '#7a1f60', glow: 'rgba(255,96,200,0.35)' },
+};
+
+const DENSITY = {
+  compact: { pad: 12, gap: 10 },
+  regular: { pad: 18, gap: 14 },
+  comfy:   { pad: 26, gap: 20 },
+};
+
+const RADIUS = {
+  sharp: { sm: 0, md: 0, lg: 0 },
+  soft:  { sm: 4, md: 8, lg: 14 },
+  pill:  { sm: 8, md: 14, lg: 22 },
+};
+
+function injectTweaks(t) {
+  const fp = FONT_PAIRS[t.font] || FONT_PAIRS.cockpit;
+  const ac = ACCENTS[t.accent] || ACCENTS['#a8ff60'];
+  const accentHex = t.accent in ACCENTS ? t.accent : '#a8ff60';
+  const dn = DENSITY[t.density] || DENSITY.regular;
+  const rd = RADIUS[t.radius] || RADIUS.soft;
+  const css = `
+.avia {
+  --font-display: ${fp.display};
+  --font-mono: ${fp.mono};
+  --accent: ${accentHex};
+  --accent-2: ${ac.a2};
+  --accent-dim: ${ac.dim};
+  --accent-glow: ${ac.glow};
+  --pad: ${dn.pad}px;
+  --gap: ${dn.gap}px;
+  --r-sm: ${rd.sm}px;
+  --r-md: ${rd.md}px;
+  --r-lg: ${rd.lg}px;
+  --speed: ${t.speed};
+}
+`;
+  let el = document.getElementById('avia-tweaks');
+  if (!el) {
+    el = document.createElement('style');
+    el.id = 'avia-tweaks';
+    document.head.appendChild(el);
+  }
+  el.textContent = css;
+  // sync theme attribute on all .avia roots
+  document.querySelectorAll('.avia').forEach(n => n.setAttribute('data-theme', t.theme));
+  // global speed for animations that read window flag (Globe arcs)
+  window.__aviaSpeed = t.speed;
+}
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [lang, setLang] = React.useState(() => {
+    try { return localStorage.getItem('avia-lang') || 'ru'; } catch { return 'ru'; }
+  });
+
+  const updateLang = (l) => {
+    setLang(l);
+    try { localStorage.setItem('avia-lang', l); } catch {}
+  };
+
+  React.useEffect(() => { injectTweaks(tweaks); }, [tweaks]);
+  // Re-run on artboard mount/unmount: design-canvas may delete artboards
+  React.useEffect(() => {
+    const id = setInterval(() => injectTweaks(tweaks), 600);
+    return () => clearInterval(id);
+  }, [tweaks]);
+
+  const W = 1440, H = 900;
+
+  return (
+    <>
+      <DesignCanvas minScale={0.08} maxScale={2}>
+        <DCSection id="dashboard" title={lang === 'ru' ? 'Главная · 4 концепции' : 'Dashboard · 4 concepts'}
+          subtitle={lang === 'ru' ? 'Вариации обзорного экрана: глобус, радар, табло, бенто' : 'Overview variations: globe, radar, board, bento'}>
+          <DCArtboard id="cockpit" label="01 · COCKPIT" width={W} height={H}>
+            <ArtCockpit lang={lang} setLang={updateLang}/>
+          </DCArtboard>
+          <DCArtboard id="radar" label="02 · RADAR" width={W} height={H}>
+            <ArtRadar lang={lang} setLang={updateLang}/>
+          </DCArtboard>
+          <DCArtboard id="board" label="03 · BOARD" width={W} height={H}>
+            <ArtBoard lang={lang} setLang={updateLang}/>
+          </DCArtboard>
+          <DCArtboard id="grid" label="04 · GRID" width={W} height={H}>
+            <ArtGrid lang={lang} setLang={updateLang}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="modules" title={lang === 'ru' ? 'Разделы · прототип' : 'Modules · prototype'}
+          subtitle={lang === 'ru' ? 'Рейсы и Билеты в едином стиле COCKPIT' : 'Flights and Tickets in COCKPIT style'}>
+          <DCArtboard id="flights" label="05 · РЕЙСЫ / FLIGHTS" width={W} height={H}>
+            <ArtFlights lang={lang} setLang={updateLang}/>
+          </DCArtboard>
+          <DCArtboard id="tickets" label="06 · БИЛЕТЫ / TICKETS" width={W} height={H}>
+            <ArtTickets lang={lang} setLang={updateLang}/>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label={lang === 'ru' ? 'Тема' : 'Theme'}/>
+        <TweakRadio label={lang === 'ru' ? 'Режим' : 'Mode'} value={tweaks.theme}
+          options={['dark', 'light']}
+          onChange={v => setTweak('theme', v)}/>
+        <TweakColor label={lang === 'ru' ? 'Акцент' : 'Accent'} value={tweaks.accent}
+          options={['#a8ff60', '#60e8ff', '#ffb84d', '#ff60c8']}
+          onChange={v => setTweak('accent', v)}/>
+
+        <TweakSection label={lang === 'ru' ? 'Типографика' : 'Typography'}/>
+        <TweakSelect label={lang === 'ru' ? 'Шрифты' : 'Fonts'} value={tweaks.font}
+          options={['cockpit', 'tech', 'brutalist', 'editorial']}
+          onChange={v => setTweak('font', v)}/>
+
+        <TweakSection label={lang === 'ru' ? 'Плотность' : 'Density'}/>
+        <TweakRadio label={lang === 'ru' ? 'Отступы' : 'Spacing'} value={tweaks.density}
+          options={['compact', 'regular', 'comfy']}
+          onChange={v => setTweak('density', v)}/>
+        <TweakRadio label={lang === 'ru' ? 'Радиус' : 'Radius'} value={tweaks.radius}
+          options={['sharp', 'soft', 'pill']}
+          onChange={v => setTweak('radius', v)}/>
+
+        <TweakSection label={lang === 'ru' ? 'Анимации' : 'Motion'}/>
+        <TweakSlider label={lang === 'ru' ? 'Скорость' : 'Speed'} value={tweaks.speed}
+          min={0.25} max={3} step={0.25} unit="×"
+          onChange={v => setTweak('speed', v)}/>
+
+        <TweakSection label={lang === 'ru' ? 'Язык' : 'Language'}/>
+        <TweakRadio label="Lang" value={lang}
+          options={['ru', 'en']}
+          onChange={updateLang}/>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);

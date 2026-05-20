@@ -23,8 +23,15 @@ build/
 # Frontend dev
 frontend/node_modules/
 frontend/.vite/
-frontend/dist/          # собираем внутри Dockerfile
+frontend/dist/
 frontend/coverage/
+
+# Backend dev
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/dist/
+backend/build/
 
 # IDE
 .idea/
@@ -38,7 +45,6 @@ frontend/coverage/
 Thumbs.db
 
 # Tests / CI
-tests/
 .pytest_cache/
 .coverage
 htmlcov/
@@ -55,5 +61,4 @@ Dockerfile*
 
 # Misc
 *.log
-*.md
 .DS_Store

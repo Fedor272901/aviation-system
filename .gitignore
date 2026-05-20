@@ -13,7 +13,8 @@ htmlcov/
 # Environment (КРИТИЧНО!)
 .env
 .env.local
-.env.production
+.env.prod
+.env.dev
 .env.*.local
 
 # Frontend
