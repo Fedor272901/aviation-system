@@ -344,6 +344,6 @@ def cancel_ticket(
 )
 def get_ticket_statistics(db: Session = Depends(get_db)):
     """Получить статистику по всем билетам."""
-    from backend.app.crud import ticket as ticket_crud
+    from app.crud import ticket as ticket_crud
 
     return ticket_crud.get_ticket_statistics(db)
