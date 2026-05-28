@@ -45,7 +45,7 @@ def register(payload: PersonCreate, db: Session = Depends(get_db)):
     user_role = person_crud.get_role_by_name(db, "user")
     if not user_role:
         # Создаём роль "user" если её нет
-        from backend.app.models import SystemRole
+        from app.models import SystemRole
 
         user_role = SystemRole(role_name="user")
         db.add(user_role)
@@ -53,7 +53,7 @@ def register(payload: PersonCreate, db: Session = Depends(get_db)):
         db.refresh(user_role)
 
     # Назначаем роль пользователю
-    from backend.app.models import PeopleSystemRole
+    from app.models import PeopleSystemRole
 
     role_assignment = PeopleSystemRole(person_id=user.id, role_id=user_role.id)
     db.add(role_assignment)

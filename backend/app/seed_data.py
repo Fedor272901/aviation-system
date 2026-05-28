@@ -10,6 +10,7 @@ from app.models import (
     FlightStatus,
     TicketStatus,
     SeatClass,
+    FlightRole,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,22 @@ def seed_database(db: Session) -> None:
                 description=sc["desc"],
             ))
             logger.info(f"Создан класс мест: {sc['name']}")
+
+    # --- Должности экипажа ---
+    crew_roles = [
+        "Командир ВС",
+        "Второй пилот",
+        "Бортинженер",
+        "Ст. бортпроводник",
+        "Бортпроводник",
+    ]
+    for role_name in crew_roles:
+        existing = db.scalar(
+            select(FlightRole).where(FlightRole.role_name == role_name)
+        )
+        if not existing:
+            db.add(FlightRole(role_name=role_name))
+            logger.info(f"Создана должность экипажа: {role_name}")
 
     db.commit()
     logger.info("Справочники успешно проверены/заполнены")

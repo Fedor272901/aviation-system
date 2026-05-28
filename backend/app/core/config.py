@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import List
 from pydantic import ConfigDict, field_validator
 from pathlib import Path
+import json
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 
@@ -22,13 +23,33 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
 
     # CORS
-    CORS_ORIGINS: list[str] = [
-        "http://localhost:5173",
-        "http://localhost:80",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:80",
-    ]
+    CORS_ORIGINS: list[str] | str = "http://localhost:5173,http://localhost:80"
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors(cls, v):
+        if isinstance(v, list):
+            return v
+        if not isinstance(v, str):
+            return []
+
+        value = v.strip()
+        if value.startswith("[") and value.endswith("]"):
+            try:
+                parsed = json.loads(value)
+                if isinstance(parsed, list):
+                    return [
+                        str(origin).strip() for origin in parsed if str(origin).strip()
+                    ]
+            except Exception:
+                pass
+
+        return [
+            origin.strip().strip('"').strip("'")
+            for origin in value.split(",")
+            if origin.strip()
+        ]
+
     model_config = ConfigDict(
         env_file=BASE_DIR / ".env", case_sensitive=True,
         # extra="ignore"

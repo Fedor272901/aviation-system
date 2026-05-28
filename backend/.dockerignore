@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtualenv
+.venv/
+venv/
+
+# Test/debug artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Local env/logs
+.env
+.env.*
+*.log
+
+# VCS/IDE
+.git
+.gitignore
+.idea/
+.vscode/
+
+# Не нужно в backend image
+tests/
