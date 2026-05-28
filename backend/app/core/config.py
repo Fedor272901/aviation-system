@@ -30,8 +30,8 @@ class Settings(BaseSettings):
         "http://127.0.0.1:80",
     ]
     model_config = ConfigDict(
-        env_file=BASE_DIR / ".env",
-        case_sensitive=True,
+        env_file=BASE_DIR / ".env", case_sensitive=True,
+        # extra="ignore"
     )
 
     @field_validator("SECRET_KEY")
