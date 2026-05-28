@@ -35,7 +35,7 @@ conn_str = (
     f"DATABASE=master;"
     f"UID={user};"
     f"PWD={password};"
-    f"Encrypt=yes;"
+    f"Encrypt=no;"
     f"TrustServerCertificate=yes;"
 )
 
