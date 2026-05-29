@@ -277,3 +277,14 @@ export interface DeleteResponse {
 export interface ApiError {
   detail: string;
 }
+
+// =========================================================
+// MODEL SEAT
+// =========================================================
+
+export interface ModelSeat {
+  id: number;
+  id_model: number;
+  id_seat_class: number;
+  seat_count: number;
+}

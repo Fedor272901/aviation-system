@@ -29,6 +29,7 @@ import type {
   PasswordChangeData,
   TokenResponse, // ← добавлен
   DeleteResponse,
+  ModelSeat,
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
@@ -166,6 +167,13 @@ export const aircraftApi = {
     seats: { class_id: number; count: number }[];
   }) => api.post<ModelAircraft>('/aircraft/models/', data),
   deleteModel: (id: number) => api.delete<DeleteResponse>(`/aircraft/models/${id}`),
+
+    // Model seats
+  getModelSeats: (modelId: number) => api.get<ModelSeat[]>(`/aircraft/model-seats/model/${modelId}`),
+  createModelSeat: (data: Omit<ModelSeat, 'id'>) => api.post<ModelSeat>('/aircraft/model-seats/', data),
+  updateModelSeat: (seatId: number, seatCount: number) =>
+    api.put<ModelSeat>(`/aircraft/model-seats/${seatId}?seat_count=${seatCount}`, {}),
+  deleteModelSeat: (seatId: number) => api.delete<DeleteResponse>(`/aircraft/model-seats/${seatId}`),
 
   // Aircraft
   getAll: (skip = 0, limit = 100) => api.get<Aircraft[]>(`/aircraft/?skip=${skip}&limit=${limit}`),
