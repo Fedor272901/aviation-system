@@ -52,7 +52,7 @@ class Settings(BaseSettings):
 
     model_config = ConfigDict(
         env_file=BASE_DIR / ".env", case_sensitive=True,
-        # extra="ignore"
+        extra="ignore"
     )
 
     @field_validator("SECRET_KEY")

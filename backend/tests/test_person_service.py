@@ -5,10 +5,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.app.models.base import Base
-from backend.app.services.person import PersonService
-from backend.app.schemas.person import PersonCreate, PersonUpdate
-from backend.app.crud import person as person_crud
+from app.models.base import Base
+from app.services.person import PersonService
+from app.schemas.person import PersonCreate, PersonUpdate
+from app.crud import person as person_crud
 
 
 @pytest.fixture

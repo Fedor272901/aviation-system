@@ -154,7 +154,7 @@ def get_available_seats_for_flight(
     db: Session, flight_id: int, seat_class_id: int
 ) -> list[str]:
     """Получить список свободных мест для рейса и класса."""
-    from backend.app.models import ModelSeat, Aircraft, ModelAircraft
+    from app.models import ModelSeat, Aircraft, ModelAircraft
 
     flight = db.get(Flight, flight_id)
     if not flight:

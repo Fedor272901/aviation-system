@@ -93,7 +93,7 @@ def seed_dev_data(db: Session) -> None:
     Тестовые данные ТОЛЬКО для локальной разработки.
     НЕ вызывать в production.
     """
-    from backend.app.models import Airport, Airline
+    from app.models import Airport, Airline
 
     airports = [
         {"code": "SVO", "name": "Шереметьево", "city": "Москва"},

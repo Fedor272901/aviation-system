@@ -7,9 +7,9 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
-from backend.app.models.base import Base
-from backend.app.main import app
-from backend.app.dependencies import get_db
+from app.models.base import Base
+from app.main import app
+from app.dependencies import get_db
 
 
 # Тестовая конфигурация
@@ -109,7 +109,7 @@ def admin_token(client, test_db):
     assert response.status_code == 200
 
     # Назначаем роль admin через БД напрямую
-    from backend.app.models import Person, SystemRole, PeopleSystemRole
+    from app.models import Person, SystemRole, PeopleSystemRole
 
     user = test_db.scalar(select(Person).where(Person.email == "admin@example.com"))
     admin_role = test_db.scalar(

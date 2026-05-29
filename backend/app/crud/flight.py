@@ -408,7 +408,7 @@ def count_status_flights(db: Session, status_id: int) -> int:
 
 def count_flight_tickets(db: Session, flight_id: int) -> int:
     """Получить количество билетов на рейс."""
-    from backend.app.models import Ticket
+    from app.models import Ticket
 
     return db.scalar(select(func.count()).where(Ticket.id_flight == flight_id)) or 0
 

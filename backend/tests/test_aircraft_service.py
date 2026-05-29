@@ -6,9 +6,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.app.models.base import Base
-from backend.app.services.aircraft import AircraftService
-from backend.app.schemas.aircraft import (
+from app.models.base import Base
+from app.services.aircraft import AircraftService
+from app.schemas.aircraft import (
     SeatClassCreate,
     ModelAircraftCreate,
     AircraftCreate,
@@ -106,7 +106,7 @@ class TestSeatClassService:
 
     def test_delete_seat_class_success(self, aircraft_service):
         """Успешное удаление класса мест."""
-        from backend.app.schemas.aircraft import SeatClassCreate
+        from app.schemas.aircraft import SeatClassCreate
 
         payload = SeatClassCreate(
             class_name="Эконом", price_multiplier=1.5, description="Тест"
@@ -143,7 +143,7 @@ class TestModelAircraftService:
 
     def test_delete_model_with_aircraft(self, aircraft_service, setup_basic_data):
         """Удаление модели с зависимыми самолётами."""
-        from backend.app.schemas.aircraft import AircraftCreate
+        from app.schemas.aircraft import AircraftCreate
 
         model = setup_basic_data["model"]
 
@@ -230,8 +230,8 @@ class TestAircraftService:
 
     def test_delete_aircraft_with_flights(self, aircraft_service, setup_basic_data):
         """Удаление самолёта с зависимыми рейсами."""
-        from backend.app.schemas.aircraft import AircraftCreate
-        from backend.app.crud import aircraft as aircraft_crud
+        from app.schemas.aircraft import AircraftCreate
+        from app.crud import aircraft as aircraft_crud
 
         aircraft = aircraft_service.create_aircraft(
             AircraftCreate(
@@ -243,7 +243,7 @@ class TestAircraftService:
         )
 
         # Создаём рейс с этим самолётом
-        from backend.app.models import Flight, Airport, Airline, FlightStatus
+        from app.models import Flight, Airport, Airline, FlightStatus
 
         airport1 = Airport(code="SVO", name="Шереметьево", city="Москва")
         airport2 = Airport(code="LED", name="Пулково", city="СПб")
@@ -294,8 +294,8 @@ class TestAircraftLeaseService:
 
     def test_create_lease_success(self, aircraft_service, setup_basic_data):
         """Успешное создание аренды."""
-        from backend.app.schemas.aircraft import AircraftCreate
-        from backend.app.crud import aircraft as aircraft_crud
+        from app.schemas.aircraft import AircraftCreate
+        from app.crud import aircraft as aircraft_crud
 
         aircraft = aircraft_service.create_aircraft(
             AircraftCreate(
@@ -308,7 +308,7 @@ class TestAircraftLeaseService:
 
         airline = aircraft_crud.get_airline(aircraft_service.db, 1)
         if not airline:
-            from backend.app.models import Airline
+            from app.models import Airline
 
             airline = Airline(name="Test Airline", code="TA", country="Test")
             aircraft_service.db.add(airline)
@@ -328,8 +328,8 @@ class TestAircraftLeaseService:
 
     def test_create_lease_duplicate_active(self, aircraft_service, setup_basic_data):
         """Создание активной аренды при существующей."""
-        from backend.app.schemas.aircraft import AircraftCreate
-        from backend.app.crud import aircraft as aircraft_crud
+        from app.schemas.aircraft import AircraftCreate
+        from app.crud import aircraft as aircraft_crud
 
         aircraft = aircraft_service.create_aircraft(
             AircraftCreate(
@@ -342,7 +342,7 @@ class TestAircraftLeaseService:
 
         airline = aircraft_crud.get_airline(aircraft_service.db, 1)
         if not airline:
-            from backend.app.models import Airline
+            from app.models import Airline
 
             airline = Airline(name="Test Airline", code="TA", country="Test")
             aircraft_service.db.add(airline)
@@ -369,8 +369,8 @@ class TestAircraftLeaseService:
 
     def test_update_lease_end_date(self, aircraft_service, setup_basic_data):
         """Обновление даты окончания аренды."""
-        from backend.app.schemas.aircraft import AircraftCreate
-        from backend.app.crud import aircraft as aircraft_crud
+        from app.schemas.aircraft import AircraftCreate
+        from app.crud import aircraft as aircraft_crud
 
         aircraft = aircraft_service.create_aircraft(
             AircraftCreate(
@@ -383,7 +383,7 @@ class TestAircraftLeaseService:
 
         airline = aircraft_crud.get_airline(aircraft_service.db, 1)
         if not airline:
-            from backend.app.models import Airline
+            from app.models import Airline
 
             airline = Airline(name="Test Airline", code="TA", country="Test")
             aircraft_service.db.add(airline)
@@ -405,8 +405,8 @@ class TestAircraftLeaseService:
 
     def test_delete_lease(self, aircraft_service, setup_basic_data):
         """Удаление аренды."""
-        from backend.app.schemas.aircraft import AircraftCreate
-        from backend.app.crud import aircraft as aircraft_crud
+        from app.schemas.aircraft import AircraftCreate
+        from app.crud import aircraft as aircraft_crud
 
         aircraft = aircraft_service.create_aircraft(
             AircraftCreate(
@@ -419,7 +419,7 @@ class TestAircraftLeaseService:
 
         airline = aircraft_crud.get_airline(aircraft_service.db, 1)
         if not airline:
-            from backend.app.models import Airline
+            from app.models import Airline
 
             airline = Airline(name="Test Airline", code="TA", country="Test")
             aircraft_service.db.add(airline)

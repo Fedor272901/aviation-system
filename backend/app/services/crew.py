@@ -46,7 +46,7 @@ class CrewService:
 
     def create_crew(self, payload: CrewCreate) -> Crew:
         """Создать сотрудника с проверкой дубликатов."""
-        from backend.app.crud import person as person_crud
+        from app.crud import person as person_crud
 
         person = person_crud.get_person(self.db, payload.person_id)
         if not person:
@@ -72,7 +72,7 @@ class CrewService:
         if not crew:
             raise ValueError("Сотрудник не найден")
 
-        from backend.app.crud import person as person_crud
+        from app.crud import person as person_crud
 
         person = person_crud.get_person(self.db, person_id)
         if not person:
@@ -103,7 +103,7 @@ class CrewService:
         if not crew:
             raise ValueError("Сотрудник экипажа не найден")
 
-        from backend.app.models import Flight
+        from app.models import Flight
 
         flight = self.db.get(Flight, payload.id_flight)
         if not flight:

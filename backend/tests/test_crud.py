@@ -6,16 +6,16 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.app.models.base import Base
-from backend.app.crud import person as person_crud
-from backend.app.crud import flight as flight_crud
-from backend.app.crud import aircraft as aircraft_crud
-from backend.app.crud import ticket as ticket_crud
-from backend.app.schemas.person import PersonCreate
-from backend.app.schemas.flight import AirportCreate, AirlineCreate, FlightStatusCreate
-from backend.app.schemas.aircraft import SeatClassCreate
-from backend.app.schemas.ticket import TicketStatusCreate
-from backend.app.auth.hashing import hash_password
+from app.models.base import Base
+from app.crud import person as person_crud
+from app.crud import flight as flight_crud
+from app.crud import aircraft as aircraft_crud
+from app.crud import ticket as ticket_crud
+from app.schemas.person import PersonCreate
+from app.schemas.flight import AirportCreate, AirlineCreate, FlightStatusCreate
+from app.schemas.aircraft import SeatClassCreate
+from app.schemas.ticket import TicketStatusCreate
+from app.auth.hashing import hash_password
 
 
 @pytest.fixture
@@ -124,7 +124,7 @@ class TestPersonCRUD:
         )
         created = person_crud.create_person(test_db, payload)
 
-        from backend.app.schemas.person import PersonUpdate
+        from app.schemas.person import PersonUpdate
 
         update_payload = PersonUpdate(first_name="Петр")
 
@@ -298,7 +298,7 @@ class TestTicketCRUD:
 
     def test_create_ticket_status(self, test_db):
         """Создание статуса билета."""
-        from backend.app.schemas.ticket import TicketStatusCreate
+        from app.schemas.ticket import TicketStatusCreate
 
         payload = TicketStatusCreate(status_name="Подтверждён")
 
@@ -308,7 +308,7 @@ class TestTicketCRUD:
 
     def test_count_status_tickets(self, test_db):
         """Подсчёт билетов со статусом."""
-        from backend.app.schemas.ticket import TicketStatusCreate
+        from app.schemas.ticket import TicketStatusCreate
 
         status = ticket_crud.create_ticket_status(
             test_db, TicketStatusCreate(status_name="Подтверждён")
@@ -318,7 +318,7 @@ class TestTicketCRUD:
 
     def test_check_seat_occupied(self, test_db):
         """Проверка занятости места."""
-        from backend.app.models import Flight, SeatClass, Ticket, Person, TicketStatus
+        from app.models import Flight, SeatClass, Ticket, Person, TicketStatus
         from decimal import Decimal
 
         flight = Flight(
