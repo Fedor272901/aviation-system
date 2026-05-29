@@ -254,7 +254,7 @@ class FlightService:
         if not flight:
             raise ValueError("Рейс не найден")
 
-        from backend.app.models import SeatClass
+        from app.models import SeatClass
 
         seat_class = self.db.get(SeatClass, payload.id_seat_class)
         if not seat_class:
