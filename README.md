@@ -1,43 +1,90 @@
-# ✈️ Aviation System
+# Aviation System
 
-Система управления авиаперевозками. Fullstack-приложение на **FastAPI** + **React** + **MSSQL**.
+Система для управления авиаперевозками.
 
-## 🚀 Быстрый старт
+Проект делал в основном с упором на backend, базу данных и Docker.
 
-```bash
-git clone <repo-url>
-cd fastapi-app
-cp .env.example .env
-# Отредактируй .env
-docker compose up -d
-docker exec -it aviation-app python scripts/create_admin.py
-# Открой http://localhost
+## Стек
+
+**Backend**
+
+* Python
+* FastAPI
+* SQLAlchemy
+* Alembic
+* Pydantic
+* JWT
+
+**Database**
+
+* Microsoft SQL Server
+
+**Frontend**
+
+* React
+* TypeScript
+
+**Infrastructure**
+
+* Docker
+* Docker Compose
+* Nginx
+* GitHub Actions
+
+## Что реализовано
+
+* регистрация и авторизация пользователей
+* JWT-аутентификация
+* роли пользователей
+* работа с рейсами
+* самолёты и аэропорты
+* экипажи
+* покупка билетов
+* CRUD для основных сущностей
+* работа с базой данных через SQLAlchemy
+* миграции Alembic
+* REST API на FastAPI
+* Docker-сборка и запуск проекта
+
+## Архитектура
+
+```text
+React
+  ↓
+Nginx
+  ↓
+FastAPI
+  ↓
+SQL Server
 ```
 
-## 📚 Документация
+## Запуск
 
-| Документ | Описание |
-|----------|----------|
-| [docs/architecture.md](docs/architecture.md) | Архитектура и стек технологий |
-| [docs/backend.md](docs/backend.md) | API endpoints, авторизация, роли |
-| [docs/frontend.md](docs/frontend.md) | React-приложение, роутинг, компоненты |
-| [docs/database.md](docs/database.md) | Схема БД, миграции, seed-данные |
-| [docs/deployment.md](docs/deployment.md) | Деплой в Yandex Cloud |
-| [docs/local-development.md](docs/local-development.md) | Локальная разработка |
-| [docs/security.md](docs/security.md) | Безопасность, JWT, 152-ФЗ |
-| [docs/testing.md](docs/testing.md) | Запуск тестов |
-| [docs/troubleshooting.md](docs/troubleshooting.md) | Решение проблем |
+```bash
+git clone git@github.com:Fedor272901/aviation-system.git
+cd aviation-system
+cp .env.example .env
+```
 
-## 🏗️ Технологический стек
+Настроить `.env`, затем:
 
-**Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0, Alembic, MSSQL 2022, pyodbc
-**Frontend:** React 18, TypeScript, Vite, Zustand, Axios
-**Инфраструктура:** Docker, Docker Compose, nginx, certbot
+```bash
+docker compose up -d --build
+```
 
-## 🔐 Безопасность
+После запуска:
 
-JWT + роли (admin/user/crew), bcrypt, rate limiting, HTTPS.
+* http://localhost
 
-## 📄 Лицензия
+## Скриншоты
 
-MIT
+<img width="1763" height="909" alt="image" src="https://github.com/user-attachments/assets/00f9c894-e51d-4076-ae8e-073177db0df1" />
+<img width="1772" height="733" alt="image" src="https://github.com/user-attachments/assets/75b37924-c229-4202-8080-dc8e4794397b" />
+<img width="1785" height="661" alt="image" src="https://github.com/user-attachments/assets/f6f27ef3-bd5f-4f94-8fb2-90abc34c231a" />
+<img width="1785" height="661" alt="image" src="https://github.com/user-attachments/assets/e05e9f9c-3bfd-47d4-947f-c0cff6522282" />
+<img width="1746" height="506" alt="image" src="https://github.com/user-attachments/assets/b6f1e68f-98c9-4eaf-a442-48dcfc7133d0" />
+
+
+## Статус
+
+Учебный проект.
